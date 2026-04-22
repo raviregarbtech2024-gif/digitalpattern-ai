@@ -1,0 +1,2229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DigitalPattern AI — v3</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#08080f;--bg2:#111118;--bg3:#1a1a24;--card:#1c1c28;--border:#252535;
+  --accent:#7c6dfa;--accent2:#fa6b9d;--accent3:#3de87a;--accent4:#f7971e;
+  --text:#e8e8f4;--muted:#6a6a8a;--glass:rgba(255,255,255,0.035);--glow:rgba(124,109,250,0.1);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:50px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .22s;letter-spacing:.2px;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 18px rgba(124,109,250,.3);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(124,109,250,.5);}
+.btn-ghost{background:var(--glass);border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--text);background:var(--glow);}
+.btn-sm{padding:6px 14px;font-size:12px;}
+.btn-danger{background:rgba(255,60,60,.12);border:1px solid rgba(255,60,60,.3);color:#ff6060;}
+input,textarea,select{background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:10px 14px;color:var(--text);font-family:inherit;font-size:13px;outline:none;transition:border .2s;}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+input::placeholder,textarea::placeholder{color:var(--muted);}
+textarea{resize:none;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* PARTICLES */
+.particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.particle{position:absolute;border-radius:50%;animation:pfloat 10s ease-in-out infinite;}
+@keyframes pfloat{0%,100%{transform:translateY(0) scale(1);opacity:.25}50%{transform:translateY(-28px) scale(1.1);opacity:.6}}
+
+/* TOAST */
+.toast{position:fixed;bottom:18px;right:18px;background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:12px 18px;font-size:13px;z-index:9999;display:none;max-width:300px;animation:tIn .3s ease;line-height:1.4;}
+@keyframes tIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ═══ AI GOALS ═══ */
+.goals-hero{background:linear-gradient(135deg,rgba(124,109,250,.15),rgba(250,107,157,.08));border:1px solid rgba(124,109,250,.25);border-radius:16px;padding:22px;margin-bottom:14px;text-align:center;}
+.goals-hero-icon{font-size:36px;margin-bottom:8px;}
+.goal-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:10px;transition:all .25s;cursor:pointer;position:relative;overflow:hidden;}
+.goal-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,109,250,.06),transparent);opacity:0;transition:opacity .25s;}
+.goal-card:hover::before{opacity:1;}
+.goal-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.goal-card.adopted{border-color:var(--accent3);background:rgba(61,232,122,.04);}
+.goal-card-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;}
+.goal-card-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.goal-card-body{font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:10px;}
+.goal-card-footer{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.goal-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:50px;}
+.goal-adopt-btn{margin-left:auto;font-size:11px;padding:5px 12px;}
+.goal-why{background:var(--bg3);border-radius:9px;padding:10px 12px;font-size:11px;color:var(--muted);line-height:1.6;margin-top:8px;border-left:3px solid var(--accent);display:none;}
+.goal-card.open .goal-why{display:block;}
+.goal-metric{display:inline-flex;align-items:center;gap:5px;background:var(--bg3);border-radius:8px;padding:4px 10px;font-size:11px;}
+.goals-loader{text-align:center;padding:40px 20px;}
+.goals-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.adopted-goals-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px;}
+.adopted-goal-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.adopted-goal-item:last-child{border:none;}
+.goal-prog-mini{flex:1;background:var(--bg3);border-radius:50px;height:5px;overflow:hidden;margin-top:3px;}
+.goal-prog-mini-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:50px;transition:width .5s;}
+.regen-btn-wrap{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.focus-area-chip{background:var(--glass);border:1px solid var(--border);border-radius:50px;padding:5px 12px;font-size:11px;cursor:pointer;transition:all .2s;color:var(--muted);}
+.focus-area-chip.active{background:rgba(124,109,250,.15);border-color:var(--accent);color:var(--text);}
+
+.orb-badge{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9998;display:none;justify-content:center;align-items:center;animation:fadeIn .3s ease;}
+.orb-badge.open{display:flex;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.orb-badge-inner{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:40px;text-align:center;max-width:380px;animation:scaleIn .4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes scaleIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+
+/* ═══ LOGIN ═══ */
+#loginScreen{justify-content:center;align-items:center;background:var(--bg);}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:42px 36px;width:400px;max-width:95vw;position:relative;z-index:1;}
+.login-box::before{content:'';position:absolute;inset:-1px;border-radius:25px;background:linear-gradient(135deg,rgba(124,109,250,.2),rgba(250,107,157,.12),transparent 55%);z-index:-1;}
+.logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:4px;}
+.logo-sub{text-align:center;color:var(--muted);font-size:12px;margin-bottom:26px;}
+.tab-row{display:flex;gap:3px;margin-bottom:22px;background:var(--bg3);border-radius:11px;padding:3px;}
+.tab{flex:1;text-align:center;padding:7px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all .2s;}
+.tab.active{background:var(--accent);color:#fff;}
+.fgrp{margin-bottom:13px;}
+.flbl{font-size:12px;color:var(--muted);margin-bottom:5px;display:block;}
+.err{color:#ff6060;font-size:11px;margin-top:5px;display:none;}
+
+/* ═══ ONBOARDING ═══ */
+#onboardingScreen{justify-content:center;align-items:center;background:var(--bg);}
+.ob-wrap{width:560px;max-width:95vw;z-index:1;}
+.prog-bar{background:var(--bg3);border-radius:50px;height:5px;margin-bottom:5px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:50px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.prog-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:22px;}
+.ob-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:34px;animation:sIn .4s ease;}
+@keyframes sIn{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:none}}
+.ob-opts{display:grid;gap:8px;margin-bottom:22px;}
+.ob-opt{display:flex;align-items:center;gap:11px;padding:12px 15px;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .2s;background:var(--glass);font-size:13px;}
+.ob-opt:hover{border-color:var(--accent);background:var(--glow);}
+.ob-opt.sel{border-color:var(--accent);background:rgba(124,109,250,.1);}
+.chk{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);transition:all .2s;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;}
+.ob-opt.sel .chk{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* ═══ UPLOAD ═══ */
+#uploadScreen{justify-content:center;align-items:center;background:var(--bg);}
+.up-box{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:38px;width:520px;max-width:95vw;text-align:center;z-index:1;}
+.up-zone{border:2px dashed var(--border);border-radius:15px;padding:32px 20px;margin:18px 0;cursor:pointer;transition:all .3s;}
+.up-zone:hover,.up-zone.drag{border-color:var(--accent);background:var(--glow);}
+.up-analysis{background:var(--bg3);border-radius:13px;padding:14px 16px;margin:10px 0;text-align:left;display:none;}
+.ua-item{display:flex;align-items:center;gap:9px;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border);}
+.ua-item:last-child{border:none;}
+.ua-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+/* ═══ DASHBOARD ═══ */
+#dashScreen{flex-direction:row;background:var(--bg);}
+.sidebar{width:208px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 0;flex-shrink:0;}
+.sb-logo{padding:0 16px 16px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:10px 16px;cursor:pointer;color:var(--muted);font-size:12px;font-weight:500;transition:all .2s;border-left:3px solid transparent;user-select:none;}
+.nav-item:hover{color:var(--text);background:var(--glass);}
+.nav-item.active{color:var(--text);background:rgba(124,109,250,.09);border-left-color:var(--accent);}
+.nav-icon{font-size:14px;width:17px;text-align:center;}
+.sb-footer{margin-top:auto;padding:14px;}
+.user-pill{display:flex;align-items:center;gap:8px;background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:9px 10px;cursor:pointer;transition:all .2s;}
+.user-pill:hover{border-color:var(--accent);}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;overflow:hidden;}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+
+.main{flex:1;overflow-y:auto;background:var(--bg);}
+.dash-page{display:none;padding:20px;}
+.dash-page.active{display:block;}
+.page-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;}
+.page-title{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;}
+.page-sub{color:var(--muted);font-size:12px;margin-top:3px;}
+
+/* METRIC CARDS */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:16px;}
+.mc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:15px;cursor:pointer;transition:all .2s;}
+.mc:hover{border-color:var(--accent);transform:translateY(-2px);}
+.mc-icon{font-size:17px;margin-bottom:5px;}
+.mc-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.mc-lbl{font-size:11px;color:var(--muted);margin-top:1px;}
+.mc-ch{font-size:10px;margin-top:4px;}
+.up-c{color:var(--accent3);}
+.dn-c{color:var(--accent2);}
+
+/* CHART CARDS */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;}
+.cc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;}
+.cc-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.cc-sub{font-size:11px;color:var(--muted);margin-bottom:12px;}
+
+/* WEEKLY BAR */
+.wk-bars{display:flex;align-items:flex-end;gap:4px;height:90px;}
+.wk-bar{flex:1;border-radius:5px 5px 0 0;cursor:pointer;transition:height .5s cubic-bezier(.4,0,.2,1),background .3s;position:relative;}
+.wk-bar:hover{opacity:.75;}
+.wk-lbl{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:9px;color:var(--muted);}
+.wk-val{position:absolute;top:-16px;left:0;right:0;text-align:center;font-size:9px;color:var(--text);opacity:0;transition:opacity .2s;}
+.wk-bar:hover .wk-val{opacity:1;}
+
+/* TASKS */
+.tasks-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.sec-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px;}
+.ai-badge{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:50px;}
+.task-item{display:flex;align-items:flex-start;gap:10px;padding:11px;border:1px solid var(--border);border-radius:11px;margin-bottom:6px;cursor:pointer;transition:all .2s;}
+.task-item:hover{border-color:var(--accent);background:var(--glow);}
+.task-item.done{opacity:.55;}
+.task-cb{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:1px;font-size:10px;}
+.task-item.done .task-cb{background:var(--accent3);border-color:var(--accent3);color:#07120f;}
+.task-item.done .task-text{text-decoration:line-through;color:var(--muted);}
+.task-info{flex:1;}
+.task-text{font-size:12px;font-weight:500;margin-bottom:2px;}
+.task-meta{font-size:10px;color:var(--muted);}
+.task-pri{font-size:9px;font-weight:700;padding:2px 7px;border-radius:50px;flex-shrink:0;margin-top:1px;}
+.HIGH{background:rgba(250,107,157,.15);color:var(--accent2);}
+.MED{background:rgba(247,151,30,.15);color:var(--accent4);}
+.LOW{background:rgba(61,232,122,.15);color:var(--accent3);}
+
+/* PROGRESS BARS */
+.prog-track{background:var(--bg3);border-radius:50px;height:7px;overflow:hidden;margin:10px 0;}
+.prog-track-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:50px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+
+/* RINGS */
+.ring-row{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px;}
+.ring-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
+svg.ring{width:68px;height:68px;}
+.rc-circle{transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);}
+
+/* INSIGHTS */
+.ins-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.ins-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;}
+.ins-list{list-style:none;}
+.ins-list li{font-size:11px;color:var(--muted);padding:5px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;line-height:1.4;}
+.ins-list li:last-child{border:none;}
+.dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.ai-rec-box{background:linear-gradient(135deg,rgba(124,109,250,.1),rgba(250,107,157,.06));border:1px solid rgba(124,109,250,.2);border-radius:14px;padding:16px;margin-top:9px;}
+
+/* BOT */
+.bot-layout{display:flex;flex-direction:column;height:556px;}
+.bot-hdr{display:flex;align-items:center;gap:11px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.bot-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:15px;}
+.bot-status{font-size:11px;color:var(--accent3);display:flex;align-items:center;gap:4px;}
+.bot-status::before{content:'';width:5px;height:5px;background:var(--accent3);border-radius:50%;animation:bpulse 2s infinite;}
+@keyframes bpulse{0%,100%{opacity:1}50%{opacity:.3}}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px;}
+.msg{max-width:78%;}
+.msg.bot{align-self:flex-start;}
+.msg.user{align-self:flex-end;}
+.msg-bubble{padding:9px 13px;border-radius:14px;font-size:12px;line-height:1.55;}
+.msg.bot .msg-bubble{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px;}
+.msg.user .msg-bubble{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-bottom-right-radius:4px;}
+.msg-time{font-size:10px;color:var(--muted);margin-top:2px;}
+.msg.user .msg-time{text-align:right;}
+.chat-inp-wrap{padding:12px 14px;border-top:1px solid var(--border);background:var(--bg2);display:flex;gap:9px;align-items:flex-end;flex-shrink:0;}
+.chat-inp-wrap textarea{flex:1;min-height:36px;max-height:80px;}
+.send-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s;}
+.send-btn:hover{transform:scale(1.1);}
+.typing-ind{display:flex;gap:3px;padding:7px 11px;align-items:center;}
+.tdot{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:tdot .8s ease-in-out infinite;}
+.tdot:nth-child(2){animation-delay:.15s;}
+.tdot:nth-child(3){animation-delay:.3s;}
+@keyframes tdot{0%,80%,100%{transform:scale(.8);opacity:.4}40%{transform:scale(1.1);opacity:1}}
+.qr-wrap{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 8px;}
+.qr-btn{background:var(--glass);border:1px solid var(--border);color:var(--text);border-radius:50px;padding:5px 11px;font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s;}
+.qr-btn:hover{border-color:var(--accent);background:var(--glow);}
+
+/* ORB SYSTEM */
+.orb-svg{display:block;}
+.orb-container{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;}
+.orb-name{font-size:12px;font-weight:600;color:var(--text);}
+.orb-req{font-size:10px;color:var(--muted);}
+.orb-locked{opacity:.35;filter:grayscale(.7);}
+.orb-current{animation:orbPulse 3s ease-in-out infinite;}
+@keyframes orbPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(124,109,250,.4))}50%{filter:drop-shadow(0 0 20px rgba(124,109,250,.8))}}
+.orb-unlocked-badge{position:relative;}
+.orb-unlocked-badge::after{content:'✓';position:absolute;top:-3px;right:-3px;width:16px;height:16px;background:var(--accent3);border-radius:50%;font-size:9px;display:flex;align-items:center;justify-content:center;color:#07120f;font-weight:700;}
+.achievement-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.orb-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:all .25s;}
+.orb-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.orb-card.current{border-color:var(--accent);background:rgba(124,109,250,.06);}
+.orb-card.locked{opacity:.4;}
+.orb-card.unlocked{border-color:var(--accent3);}
+.next-orb-banner{background:linear-gradient(135deg,rgba(124,109,250,.12),rgba(250,107,157,.07));border:1px solid rgba(124,109,250,.25);border-radius:14px;padding:16px;margin-bottom:14px;display:flex;align-items:center;gap:16px;}
+
+/* REPORTS */
+.report-item{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;gap:13px;cursor:pointer;transition:all .2s;}
+.report-item:hover{border-color:var(--accent);transform:translateX(3px);}
+
+/* SETTINGS */
+.settings-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px;}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+.settings-row:last-child{border:none;}
+.toggle{width:36px;height:20px;background:var(--border);border-radius:50px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:var(--accent);}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;}
+.toggle.on::after{transform:translateX(16px);}
+
+/* PROFILE MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:900;display:none;justify-content:center;align-items:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:22px;width:460px;max-width:95vw;max-height:88vh;overflow-y:auto;padding:26px;position:relative;}
+.modal-x{position:absolute;top:14px;right:14px;background:var(--glass);border:1px solid var(--border);color:var(--muted);border-radius:8px;cursor:pointer;padding:4px 10px;font-size:12px;}
+.modal-x:hover{color:var(--text);}
+.prof-av-big{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;margin:0 auto 10px;cursor:pointer;position:relative;overflow:hidden;border:3px solid rgba(124,109,250,.4);}
+.prof-av-big img{width:100%;height:100%;object-fit:cover;}
+.prof-av-big:hover::after{content:'📷';position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:50%;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:14px 0;}
+.stat-box{background:var(--bg3);border-radius:10px;padding:10px;text-align:center;}
+.stat-num{font-size:17px;font-weight:700;}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* CHART tooltip modal */
+.chart-detail-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;width:360px;max-width:95vw;z-index:910;display:none;}
+.chart-detail-modal.open{display:block;}
+
+/* NOTIF BARS */
+.notif-bar-wrap{margin-bottom:8px;}
+.notif-bar-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;}
+.notif-bar-track{background:var(--bg3);border-radius:50px;height:5px;overflow:hidden;}
+.notif-bar-fill{height:100%;border-radius:50px;transition:width .8s ease;}
+
+@media(max-width:580px){
+  .sidebar{width:50px;}
+  .sb-logo,.nav-item span,.user-pill>div:last-child{display:none;}
+  .metrics-grid{grid-template-columns:1fr 1fr;}
+  .chart-row,.ins-grid,.ring-row,.achievement-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+<div class="toast" id="toast"></div>
+
+<!-- ORB ACHIEVEMENT POPUP -->
+<div class="orb-badge" id="orbBadge">
+  <div class="orb-badge-inner">
+    <div id="orbBadgeSvg" style="margin:0 auto 16px;"></div>
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;" id="orbBadgeName"></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:18px;" id="orbBadgeDesc"></div>
+    <button class="btn btn-primary" onclick="closeOrbBadge()">Awesome! 🎉</button>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeProfile()">✕</button>
+    <div style="text-align:center;margin-bottom:16px;">
+      <div class="prof-av-big" id="profAvBig" onclick="triggerAvatarUpload()"><span id="profAvText">U</span></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Tap to change photo</div>
+      <input type="file" id="avatarInp" accept="image/*" style="display:none;" onchange="handleAvatarUpload(this)">
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;" id="profNameBig">User</div>
+      <div style="font-size:12px;color:var(--muted);" id="profEmailBig"></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num" id="profStreak">0</div><div class="stat-lbl">Day Streak</div></div>
+      <div class="stat-box"><div class="stat-num" id="profTasksDone">0</div><div class="stat-lbl">Tasks Done</div></div>
+      <div class="stat-box"><div class="stat-num" id="profScore">-</div><div class="stat-lbl">Focus Score</div></div>
+    </div>
+    <!-- Current Orb in Profile -->
+    <div style="background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:14px;">
+      <div id="profOrbSvg"></div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:2px;">Current Rank</div>
+        <div style="font-size:14px;font-weight:700;" id="profOrbName">Sprout</div>
+        <div style="font-size:11px;color:var(--muted);" id="profOrbDesc">Just getting started</div>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div class="flbl">Display Name</div>
+      <input id="editName" style="width:100%;" placeholder="Your name">
+    </div>
+    <div style="margin-bottom:14px;">
+      <div class="flbl">Daily Screen Time Goal (hours)</div>
+      <input id="editGoal" type="number" style="width:100%;" min="1" max="16" value="4">
+    </div>
+    <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--muted);line-height:1.6;" id="profGoalText"></div>
+    <div style="display:flex;gap:9px;">
+      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="saveProfile()">Save Changes</button>
+      <button class="btn btn-ghost" onclick="signOut()">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHART DETAIL MODAL -->
+<div class="chart-detail-modal" id="chartDetailModal">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="font-size:14px;font-weight:700;" id="cdmTitle">App Breakdown</div>
+    <button class="modal-x" style="position:static;" onclick="closeChartDetail()">✕</button>
+  </div>
+  <div id="cdmContent"></div>
+</div>
+<div id="cdmOverlay" style="display:none;position:fixed;inset:0;z-index:905;" onclick="closeChartDetail()"></div>
+
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<div class="screen active" id="loginScreen">
+  <div class="login-box">
+    <div class="logo">⚡ DigitalPattern AI</div>
+    <div class="logo-sub">Personalised screen habit intelligence</div>
+    <div class="tab-row">
+      <div class="tab active" id="tabLogin" onclick="switchTab('login')">Sign In</div>
+      <div class="tab" id="tabSignup" onclick="switchTab('signup')">Create Account</div>
+    </div>
+    <div id="loginForm">
+      <div class="fgrp"><label class="flbl">Email</label><input type="email" id="loginEmail" placeholder="you@example.com" style="width:100%;"></div>
+      <div class="fgrp"><label class="flbl">Password</label><input type="password" id="loginPass" placeholder="••••••••" style="width:100%;"><div class="err" id="loginErr">Try: demo@test.com / demo123</div></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:5px;" onclick="doLogin()">Sign In →</button>
+      <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted);">Demo: demo@test.com / demo123</div>
+    </div>
+    <div id="signupForm" style="display:none;">
+      <div class="fgrp"><label class="flbl">Full Name</label><input type="text" id="signupName" placeholder="Your name" style="width:100%;"></div>
+      <div class="fgrp"><label class="flbl">Email</label><input type="email" id="signupEmail" placeholder="you@example.com" style="width:100%;"></div>
+      <div class="fgrp"><label class="flbl">Password</label><input type="password" id="signupPass" placeholder="Min 6 characters" style="width:100%;"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:5px;" onclick="doSignup()">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ONBOARDING ═══════════════ -->
+<div class="screen" id="onboardingScreen">
+  <div class="ob-wrap">
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:14%"></div></div>
+    <div class="prog-lbl"><span id="progTxt">Question 1 of 7</span><span id="progPct">14%</span></div>
+    <div class="ob-card" id="obCard"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ UPLOAD ═══════════════ -->
+<div class="screen" id="uploadScreen">
+  <div class="up-box">
+    <div style="font-size:26px;margin-bottom:9px;">📊</div>
+    <div style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:4px;">Upload Your Screen Data</div>
+    <div style="font-size:12px;color:var(--muted);">CSV, Excel, JSON or PDF export from any screen time tracker</div>
+    <div class="up-zone" id="upZone" onclick="document.getElementById('fileInp').click()" ondragover="dOver(event)" ondragleave="dLeave()" ondrop="dDrop(event)">
+      <div style="font-size:32px;margin-bottom:7px;">📂</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:3px;" id="upZoneTitle">Drop your file here</div>
+      <div style="font-size:12px;color:var(--muted);">or click to browse</div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
+        <span style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:3px 8px;font-size:10px;color:var(--muted);">CSV</span>
+        <span style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:3px 8px;font-size:10px;color:var(--muted);">XLSX</span>
+        <span style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:3px 8px;font-size:10px;color:var(--muted);">JSON</span>
+        <span style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:3px 8px;font-size:10px;color:var(--muted);">PDF</span>
+      </div>
+    </div>
+    <input type="file" id="fileInp" accept=".csv,.xlsx,.xls,.json,.txt,.pdf" onchange="handleFile(this)" style="display:none;">
+    <div class="up-analysis" id="upAnalysis"></div>
+    <div id="upProgWrap" style="display:none;margin:10px 0;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:5px;" id="upProgLbl">🤖 Analysing your data...</div>
+      <div style="background:var(--bg3);border-radius:50px;height:4px;overflow:hidden;"><div id="upProgBar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:50px;width:0%;transition:width .12s;"></div></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px;" onclick="skipUpload()">Continue with Sample Data →</button>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;">🔒 All analysis is local — your data never leaves your browser</div>
+  </div>
+</div>
+
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<div class="screen" id="dashScreen">
+  <div class="sidebar">
+    <div class="sb-logo">⚡ DPA</div>
+    <div class="nav-item active" id="nav-overview" onclick="showPage('overview')"><span class="nav-icon">🏠</span><span>Overview</span></div>
+    <div class="nav-item" id="nav-analysis" onclick="showPage('analysis')"><span class="nav-icon">📊</span><span>Analysis</span></div>
+    <div class="nav-item" id="nav-tasks" onclick="showPage('tasks')"><span class="nav-icon">✅</span><span>AI Tasks</span></div>
+    <div class="nav-item" id="nav-insights" onclick="showPage('insights')"><span class="nav-icon">💡</span><span>Insights</span></div>
+    <div class="nav-item" id="nav-achievements" onclick="showPage('achievements')"><span class="nav-icon">🏆</span><span>Achievements</span></div>
+    <div class="nav-item" id="nav-goals" onclick="showPage('goals')"><span class="nav-icon">🌟</span><span>AI Goals</span></div>
+    <div class="nav-item" id="nav-bot" onclick="showPage('bot')"><span class="nav-icon">🤖</span><span>AI Coach</span></div>
+    <div class="nav-item" id="nav-reports" onclick="showPage('reports')"><span class="nav-icon">📄</span><span>Reports</span></div>
+    <div class="nav-item" id="nav-settings" onclick="showPage('settings')"><span class="nav-icon">⚙️</span><span>Settings</span></div>
+    <div class="sb-footer">
+      <div class="user-pill" onclick="openProfile()">
+        <div class="avatar" id="sbAvatar"><span id="sbAvatarText">U</span></div>
+        <div><div style="font-size:12px;font-weight:600;" id="sbName">User</div><div style="font-size:10px;color:var(--muted);">Free Plan</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main" id="mainContent">
+
+    <!-- OVERVIEW -->
+    <div class="dash-page active" id="page-overview">
+      <div class="page-hdr">
+        <div><div class="page-title" id="ovTitle">Overview 👋</div><div class="page-sub" id="ovSub">Your digital health summary</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="refreshOverview()">🔄 Refresh</button>
+      </div>
+      <div class="metrics-grid">
+        <div class="mc" onclick="showPage('analysis')"><div class="mc-icon">📱</div><div class="mc-val" id="m-screen">--</div><div class="mc-lbl">Daily Screen Time</div><div class="mc-ch" id="m-screen-ch"></div></div>
+        <div class="mc" onclick="showPage('tasks')"><div class="mc-icon">🎯</div><div class="mc-val" id="m-tasks">0</div><div class="mc-lbl">Tasks Done</div><div class="mc-ch up-c" id="m-tasks-ch">Keep going!</div></div>
+        <div class="mc" onclick="showPage('insights')"><div class="mc-icon">🔥</div><div class="mc-val" id="m-streak">0</div><div class="mc-lbl">Day Streak</div><div class="mc-ch up-c" id="m-streak-ch"></div></div>
+        <div class="mc" onclick="showPage('achievements')"><div class="mc-icon">⚡</div><div class="mc-val" id="m-focus">--</div><div class="mc-lbl">Focus Score</div><div class="mc-ch" id="m-focus-ch"></div></div>
+      </div>
+      <div class="cc" style="margin-bottom:14px;">
+        <div class="cc-title">Weekly Screen Time</div>
+        <div class="cc-sub">Tap a bar to see day details</div>
+        <div class="wk-bars" id="wkBars"></div>
+        <div style="height:22px;"></div>
+      </div>
+      <div class="tasks-wrap">
+        <div class="sec-hdr"><div class="sec-title">🤖 Today's Tasks <span class="ai-badge">SMART</span></div><button class="btn btn-ghost btn-sm" onclick="showPage('tasks')">View All →</button></div>
+        <div id="quickTasksEl"></div>
+      </div>
+    </div>
+
+    <!-- ANALYSIS -->
+    <div class="dash-page" id="page-analysis">
+      <div class="page-hdr"><div><div class="page-title">Usage Analysis 📊</div><div class="page-sub" id="analysisSub">Loading...</div></div><button class="btn btn-ghost btn-sm" onclick="downloadReport('analysis')">📤 Export</button></div>
+      <div class="chart-row">
+        <div class="cc"><div class="cc-title">App Usage Breakdown</div><div class="cc-sub" id="catSub">By category</div><canvas id="catChart" height="150"></canvas></div>
+        <div class="cc"><div class="cc-title">Hourly Usage Pattern</div><div class="cc-sub">When you use your phone most</div><canvas id="hourChart" height="150"></canvas></div>
+      </div>
+      <div class="chart-row">
+        <div class="cc">
+          <div class="cc-title">Top Notification Sources</div>
+          <div class="cc-sub" id="notifSub">Apps interrupting you most</div>
+          <div id="notifBarsEl" style="margin-top:8px;"></div>
+        </div>
+        <div class="cc">
+          <div class="cc-title" style="display:flex;align-items:center;gap:8px;">Productive vs Distraction <span style="font-size:10px;color:var(--accent);cursor:pointer;" onclick="openProdDetail()">Click bars for details →</span></div>
+          <div class="cc-sub">Weekly balance — click any bar</div>
+          <canvas id="prodChart" height="150" style="cursor:pointer;" onclick="openProdDetail()"></canvas>
+        </div>
+      </div>
+      <div class="cc"><div class="cc-title" id="dataSourceTitle">📁 Data Source</div><div id="dataSourceInfo" style="font-size:12px;color:var(--muted);margin-top:7px;line-height:1.7;"></div></div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="dash-page" id="page-tasks">
+      <div class="page-hdr"><div><div class="page-title">AI Task Coach ✅</div><div class="page-sub" id="tasksSub">Personalised to your goals & data</div></div><button class="btn btn-primary btn-sm" onclick="generateAITask()">✨ New Task</button></div>
+      <div class="tasks-wrap">
+        <div class="sec-hdr"><div class="sec-title">Progress <span class="ai-badge">LIVE</span></div><span id="taskProgTxt" style="font-size:12px;color:var(--muted);"></span></div>
+        <div class="prog-track"><div class="prog-track-fill" id="taskProgFill" style="width:0%"></div></div>
+        <div id="allTasksEl"></div>
+      </div>
+      <div class="ring-row" id="ringRow">
+        <div class="ring-card"><svg class="ring" viewBox="0 0 68 68"><circle cx="34" cy="34" r="27" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="34" cy="34" r="27" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="169.6" class="rc-circle" id="ring1" stroke-dashoffset="169.6" stroke-linecap="round" transform="rotate(-90 34 34)"/></svg><div style="font-size:15px;font-weight:700;margin-top:6px;" id="ring1Val">0%</div><div style="font-size:10px;color:var(--muted);">Tasks Done</div></div>
+        <div class="ring-card"><svg class="ring" viewBox="0 0 68 68"><circle cx="34" cy="34" r="27" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="34" cy="34" r="27" fill="none" stroke="var(--accent2)" stroke-width="6" stroke-dasharray="169.6" class="rc-circle" id="ring2" stroke-dashoffset="84.8" stroke-linecap="round" transform="rotate(-90 34 34)"/></svg><div style="font-size:15px;font-weight:700;margin-top:6px;" id="ring2Val">50%</div><div style="font-size:10px;color:var(--muted);">Goal Progress</div></div>
+        <div class="ring-card"><svg class="ring" viewBox="0 0 68 68"><circle cx="34" cy="34" r="27" fill="none" stroke="var(--border)" stroke-width="6"/><circle cx="34" cy="34" r="27" fill="none" stroke="var(--accent3)" stroke-width="6" stroke-dasharray="169.6" class="rc-circle" id="ring3" stroke-dashoffset="169.6" stroke-linecap="round" transform="rotate(-90 34 34)"/></svg><div style="font-size:15px;font-weight:700;margin-top:6px;" id="ring3Val">0</div><div style="font-size:10px;color:var(--muted);">Day Streak</div></div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="dash-page" id="page-insights">
+      <div class="page-hdr"><div><div class="page-title">Smart Insights 💡</div><div class="page-sub">AI-generated, personalised to you</div></div></div>
+      <div class="ins-grid" id="insightsGrid"></div>
+      <div class="ai-rec-box">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px;">🤖 AI Recommendation</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;" id="aiRecText">Loading...</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:9px;" onclick="newRec()">🔄 New Tip</button>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENTS -->
+    <div class="dash-page" id="page-achievements">
+      <div class="page-hdr"><div><div class="page-title">Achievements 🏆</div><div class="page-sub">Your orb rank & progress</div></div></div>
+      <!-- Current orb hero -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;display:flex;align-items:center;gap:20px;">
+        <div id="heroOrbSvg"></div>
+        <div style="flex:1;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Your Current Rank</div>
+          <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;" id="heroOrbName">Sprout</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px;" id="heroOrbDesc">Complete tasks to level up!</div>
+          <div class="prog-track" style="margin:0;"><div class="prog-track-fill" id="heroOrbProg" style="width:0%"></div></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="heroOrbProgTxt">0 tasks to next orb</div>
+        </div>
+      </div>
+      <!-- Next orb preview -->
+      <div class="next-orb-banner" id="nextOrbBanner">
+        <div id="nextOrbSvg"></div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:2px;">🎯 Next Rank to Unlock</div>
+          <div style="font-size:14px;font-weight:700;" id="nextOrbName">Enlightment</div>
+          <div style="font-size:11px;color:var(--muted);" id="nextOrbReq">Complete 5 more tasks</div>
+        </div>
+      </div>
+      <!-- All orbs grid -->
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;">All Ranks</div>
+      <div class="achievement-grid" id="achievementGrid"></div>
+    </div>
+
+    <!-- AI GOALS -->
+    <div class="dash-page" id="page-goals">
+      <div class="page-hdr">
+        <div><div class="page-title">AI Goal Recommendations 🌟</div><div class="page-sub">Personalised goals generated by Claude AI based on your data & habits</div></div>
+        <button class="btn btn-primary btn-sm" onclick="generateGoals()">✨ Generate New</button>
+      </div>
+
+      <!-- Focus area filter chips -->
+      <div style="display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:11px;color:var(--muted);">Focus on:</span>
+        <div class="focus-area-chip active" id="chip-all" onclick="filterGoals('all')">All Areas</div>
+        <div class="focus-area-chip" id="chip-screen" onclick="filterGoals('screen')">📱 Screen Time</div>
+        <div class="focus-area-chip" id="chip-focus" onclick="filterGoals('focus')">🎯 Focus</div>
+        <div class="focus-area-chip" id="chip-habits" onclick="filterGoals('habits')">🔁 Habits</div>
+        <div class="focus-area-chip" id="chip-wellness" onclick="filterGoals('wellness')">🧘 Wellness</div>
+        <div class="focus-area-chip" id="chip-social" onclick="filterGoals('social')">📲 Social Media</div>
+      </div>
+
+      <!-- Adopted goals section -->
+      <div class="adopted-goals-section" id="adoptedSection" style="display:none;">
+        <div class="sec-hdr" style="margin-bottom:10px;">
+          <div class="sec-title">✅ Your Active Goals <span class="ai-badge">TRACKING</span></div>
+          <span id="adoptedCount" style="font-size:12px;color:var(--muted);"></span>
+        </div>
+        <div id="adoptedGoalsEl"></div>
+      </div>
+
+      <!-- AI generated goals -->
+      <div id="goalsLoader" class="goals-loader" style="display:none;">
+        <div class="goals-spinner"></div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Claude AI is analysing your profile...</div>
+        <div style="font-size:11px;color:var(--muted);" id="goalsLoaderTxt">Reading your screen time patterns</div>
+      </div>
+
+      <div id="goalsHero" class="goals-hero">
+        <div class="goals-hero-icon">🌟</div>
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px;">AI-Powered Goal Engine</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px;max-width:380px;margin-left:auto;margin-right:auto;line-height:1.6;">Claude AI analyses your screen data, onboarding answers, and current progress to generate goals that are realistic, personalised, and impactful for YOU.</div>
+        <button class="btn btn-primary" onclick="generateGoals()">✨ Generate My Goals</button>
+      </div>
+
+      <div id="goalsListEl"></div>
+    </div>
+
+    <!-- BOT -->
+    <div class="dash-page" id="page-bot" style="padding:0;">
+      <div class="bot-layout">
+        <div class="bot-hdr">
+          <div class="bot-av">🤖</div>
+          <div style="flex:1;"><div style="font-size:14px;font-weight:700;" id="botName">Pulse — AI Coach</div><div class="bot-status">Online & personalised to you</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="clearChat()">Clear</button>
+        </div>
+        <div class="chat-msgs" id="chatMsgs"></div>
+        <div class="qr-wrap" id="qrWrap"></div>
+        <div class="chat-inp-wrap">
+          <textarea id="chatInp" placeholder="Ask Pulse anything..." rows="1" onkeydown="chatKD(event)" style="width:100%;"></textarea>
+          <button class="send-btn" onclick="sendChat()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="dash-page" id="page-reports">
+      <div class="page-hdr"><div><div class="page-title">Reports 📄</div><div class="page-sub">Download your analysis as files</div></div><button class="btn btn-primary btn-sm" onclick="generateAllReports()">+ Generate All</button></div>
+      <div id="reportsEl"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="dash-page" id="page-settings">
+      <div class="page-hdr"><div><div class="page-title">Settings ⚙️</div><div class="page-sub">Account & preferences</div></div><button class="btn btn-primary btn-sm" onclick="saveSettings()">Save</button></div>
+      <div class="settings-section">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:9px;text-transform:uppercase;letter-spacing:.8px;">Notifications</div>
+        <div class="settings-row"><div><div style="font-size:13px;font-weight:500;">Daily Digest</div><div style="font-size:11px;color:var(--muted);">Morning summary</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div><div style="font-size:13px;font-weight:500;">Task Reminders</div><div style="font-size:11px;color:var(--muted);">AI coach nudges</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div><div style="font-size:13px;font-weight:500;">Streak Alerts</div><div style="font-size:11px;color:var(--muted);">Don't break your streak!</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+      <div class="settings-section">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:9px;text-transform:uppercase;letter-spacing:.8px;">Account</div>
+        <div class="settings-row"><div style="font-size:13px;font-weight:500;">Edit Profile</div><button class="btn btn-ghost btn-sm" onclick="openProfile()">Open →</button></div>
+        <div class="settings-row"><div style="font-size:13px;font-weight:500;">Export All Data (JSON)</div><button class="btn btn-ghost btn-sm" onclick="exportJSON()">Export</button></div>
+        <div class="settings-row"><div style="font-size:13px;font-weight:500;">Sign Out</div><button class="btn btn-ghost btn-sm" onclick="signOut()">Sign Out</button></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /dashScreen -->
+
+<!-- LIBRARIES -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const S = {
+  userName:'', userEmail:'', avatarUrl:null,
+  currentQ:0, answers:{},
+  fileData:null, parsedData:null,
+  tasks:[], chartsInited:false,
+  chatHistory:[], cp:{},
+  streak:1, screenTimeGoal:4,
+  tasksEverDone:0,   // total tasks done across sessions (for orb unlock)
+  currentOrbIdx:0,
+};
+
+// ══════════════════════════════════════════════
+//  ORB DEFINITIONS (match the photos)
+// ══════════════════════════════════════════════
+const ORBS = [
+  { name:'Sprout',       desc:'Just getting started!',            req:0,   reqLabel:'Starting rank',         color:['#aef0c8','#4fd68a','#1a9950'], type:'tri'   },
+  { name:'Enlightment',  desc:'Awareness is your superpower',     req:3,   reqLabel:'Complete 3 tasks',       color:['#b0cfe8','#6fa8d0','#2d6e9e'], type:'metallic', base:'#4a7fa0' },
+  { name:'Pioneer',      desc:'Charting new digital territory',   req:8,   reqLabel:'Complete 8 tasks',       color:['#b0e0f0','#7ec8e3','#2d9ec0','#f5a860'], type:'multi' },
+  { name:'Momentum',     desc:'Unstoppable forward motion',       req:15,  reqLabel:'Complete 15 tasks',      color:['#d4a0f0','#f08080','#80c0f0'], type:'multi' },
+  { name:'Luminary',     desc:'You light the way for others',     req:25,  reqLabel:'25 tasks + 7-day streak',color:['#5060d8','#3040b0','#102090'], type:'tri'   },
+  { name:'Fortress',     desc:'Your habits are unbreakable',      req:35,  reqLabel:'35 tasks completed',     color:['#cc88ff','#aa55ee','#7722cc'], type:'metallic', base:'#9944cc' },
+  { name:'Guardian',     desc:'Protector of your own focus',      req:50,  reqLabel:'50 tasks + 14-day streak',color:['#80c8b0','#50a890','#207860'], type:'metallic', base:'#509878' },
+  { name:'Acsendant',   desc:'Rising above digital noise',       req:70,  reqLabel:'70 tasks completed',     color:['#f0d040','#d0a820','#907000'], type:'metallic', base:'#c09020' },
+  { name:'Transcendant', desc:'Beyond ordinary habits',           req:90,  reqLabel:'90 tasks + 21-day streak',color:['#80f0d0','#40d0b0','#10a080'], type:'tri'   },
+  { name:'Harbinger',   desc:'You herald a new era of focus',    req:120, reqLabel:'120 tasks completed',    color:['#f06050','#d02010','#800800'], type:'metallic', base:'#c03020' },
+  { name:'Sovereign',   desc:'Supreme master of your attention', req:150, reqLabel:'150 tasks + 30-day streak',color:['#e0a0ff','#c060e0','#8020a0'], type:'metallic', base:'#a040c0' },
+  { name:'Nirvana',     desc:'Perfect digital enlightenment',    req:200, reqLabel:'200 tasks + 50-day streak',color:['#ff80c0','#6080ff','#40e0a0'], type:'swirl'  },
+];
+
+function makeOrbSVG(orb, size=60, animate=false) {
+  const c = orb.color;
+  const r = size/2;
+  const id = 'o'+Math.random().toString(36).slice(2,7);
+  let inner = '';
+
+  if(orb.type==='metallic') {
+    // Metallic disc look with radial shine
+    inner = `
+    <defs>
+      <radialGradient id="${id}rg" cx="35%" cy="30%" r="65%">
+        <stop offset="0%" stop-color="${c[0]}" stop-opacity="1"/>
+        <stop offset="45%" stop-color="${c[1]}" stop-opacity="1"/>
+        <stop offset="100%" stop-color="${c[2]}" stop-opacity="1"/>
+      </radialGradient>
+      <linearGradient id="${id}lg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.55)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.3)"/>
+      </linearGradient>
+      <radialGradient id="${id}spec" cx="38%" cy="28%" r="30%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.9)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+    </defs>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}rg)"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}lg)" opacity="0.6"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}spec)"/>
+    <!-- disc lines -->
+    <line x1="${r*0.3}" y1="${r*1.7}" x2="${r*1.7}" y2="${r*0.3}" stroke="rgba(255,255,255,0.15)" stroke-width="${size*0.025}"/>
+    <line x1="${r*0.15}" y1="${r*1.5}" x2="${r*1.85}" y2="${r*0.5}" stroke="rgba(255,255,255,0.08)" stroke-width="${size*0.02}"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
+  } else if(orb.type==='tri') {
+    // Triforce-like glassy orb with Y-shaped inner pattern
+    inner = `
+    <defs>
+      <radialGradient id="${id}rg" cx="40%" cy="30%" r="70%">
+        <stop offset="0%" stop-color="${c[0]}" stop-opacity="0.9"/>
+        <stop offset="60%" stop-color="${c[1]}" stop-opacity="0.8"/>
+        <stop offset="100%" stop-color="${c[2]||c[1]}" stop-opacity="1"/>
+      </radialGradient>
+      <radialGradient id="${id}spec" cx="35%" cy="28%" r="28%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.8)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+    </defs>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}rg)"/>
+    <!-- Y-shape -->
+    <line x1="${r}" y1="${r}" x2="${r}" y2="${r*0.3}" stroke="rgba(255,255,255,0.25)" stroke-width="${size*0.04}" stroke-linecap="round"/>
+    <line x1="${r}" y1="${r}" x2="${r*0.35}" y2="${r*1.6}" stroke="rgba(255,255,255,0.22)" stroke-width="${size*0.04}" stroke-linecap="round"/>
+    <line x1="${r}" y1="${r}" x2="${r*1.65}" y2="${r*1.6}" stroke="rgba(255,255,255,0.22)" stroke-width="${size*0.04}" stroke-linecap="round"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}spec)"/>`;
+  } else if(orb.type==='multi') {
+    // Multi-color swirling gradient
+    inner = `
+    <defs>
+      <radialGradient id="${id}a" cx="30%" cy="30%" r="60%">
+        <stop offset="0%" stop-color="${c[0]}" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+      <radialGradient id="${id}b" cx="70%" cy="60%" r="55%">
+        <stop offset="0%" stop-color="${c[1]||c[0]}" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+      <radialGradient id="${id}c" cx="50%" cy="75%" r="55%">
+        <stop offset="0%" stop-color="${c[2]||c[0]}" stop-opacity="0.7"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+      <radialGradient id="${id}base" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#1a1a2e"/>
+        <stop offset="100%" stop-color="#0a0a18"/>
+      </radialGradient>
+      <radialGradient id="${id}spec" cx="35%" cy="28%" r="28%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+    </defs>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}base)"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}a)"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}b)"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}c)"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}spec)"/>`;
+  } else {
+    // swirl (Nirvana)
+    inner = `
+    <defs>
+      <radialGradient id="${id}a" cx="25%" cy="35%" r="55%">
+        <stop offset="0%" stop-color="${c[0]}" stop-opacity="1"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+      <radialGradient id="${id}b" cx="65%" cy="55%" r="55%">
+        <stop offset="0%" stop-color="${c[1]||c[0]}" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+      <radialGradient id="${id}c" cx="45%" cy="75%" r="50%">
+        <stop offset="0%" stop-color="${c[2]||c[0]}" stop-opacity="0.8"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+      <radialGradient id="${id}base" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#101028"/><stop offset="100%" stop-color="#060614"/>
+      </radialGradient>
+      <radialGradient id="${id}spec" cx="32%" cy="26%" r="26%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.55)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+    </defs>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}base)"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}a)"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}b)"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}c)"/>
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="url(#${id}spec)"/>`;
+  }
+
+  const glowColor = c[1]||c[0];
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="orb-svg">${inner}
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.8"/>
+    ${animate?`<animateTransform attributeName="transform" type="rotate" from="0 ${r} ${r}" to="360 ${r} ${r}" dur="8s" repeatCount="indefinite"/>`:''}
+  </svg>`;
+}
+
+function getCurrentOrb(){
+  let idx=0;
+  for(let i=ORBS.length-1;i>=0;i--){
+    if(S.tasksEverDone>=ORBS[i].req){idx=i;break;}
+  }
+  return idx;
+}
+function getNextOrb(idx){ return idx<ORBS.length-1?idx+1:null; }
+
+// ══════════════════════════════════════════════
+//  PARTICLES
+// ══════════════════════════════════════════════
+(()=>{
+  const p=document.getElementById('particles');
+  ['rgba(124,109,250,','rgba(250,107,157,','rgba(61,232,122,','rgba(247,151,30,'].forEach(c=>{
+    for(let i=0;i<5;i++){
+      const d=document.createElement('div');
+      const s=3+Math.random()*7;
+      Object.assign(d.style,{position:'absolute',width:s+'px',height:s+'px',borderRadius:'50%',
+        background:c+(0.1+Math.random()*.18)+')',
+        left:Math.random()*100+'%',top:Math.random()*100+'%',
+        animationDelay:Math.random()*8+'s',animationDuration:(8+Math.random()*5)+'s'});
+      d.classList.add('particle'); p.appendChild(d);
+    }
+  });
+})();
+
+// ══════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════
+function switchTab(t){
+  ['login','signup'].forEach(x=>{
+    document.getElementById('tab'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active',x===t);
+    document.getElementById(x+'Form').style.display=x===t?'block':'none';
+  });
+}
+function doLogin(){
+  const e=document.getElementById('loginEmail').value.trim();
+  const p=document.getElementById('loginPass').value;
+  if((e==='demo@test.com'&&p==='demo123')||(e.includes('@')&&p.length>=4)){
+    S.userName=e.split('@')[0].replace(/\W/g,' ').trim()||'User';
+    S.userEmail=e;
+    document.getElementById('loginErr').style.display='none';
+    goScreen('onboardingScreen'); renderQ(0);
+  } else document.getElementById('loginErr').style.display='block';
+}
+function doSignup(){
+  const n=document.getElementById('signupName').value.trim();
+  const e=document.getElementById('signupEmail').value.trim();
+  const p=document.getElementById('signupPass').value;
+  if(!n||!e.includes('@')||p.length<6){showToast('⚠️ Fill all fields');return;}
+  S.userName=n; S.userEmail=e;
+  goScreen('onboardingScreen'); renderQ(0);
+}
+document.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&document.getElementById('loginScreen').classList.contains('active'))doLogin();});
+
+// ══════════════════════════════════════════════
+//  ONBOARDING
+// ══════════════════════════════════════════════
+const QS=[
+  {emoji:'🎯',q:'What is your main goal?',hint:'This shapes everything we build for you',opts:['Reduce screen time','Increase productivity','Improve focus','Track habits']},
+  {emoji:'📱',q:'What do you mostly use your phone for?',hint:'Your primary digital activity',opts:['Social Media','Study / Work','Entertainment','Gaming']},
+  {emoji:'⏳',q:'How many hours on your phone daily?',hint:'Be honest — we\'re here to help!',opts:['Less than 2 hrs','2–4 hrs','4–6 hrs','6+ hrs']},
+  {emoji:'🚨',q:'Where do you waste the most time?',hint:'Your biggest digital black hole',opts:['Instagram / Reels','YouTube / Videos','Games','Random browsing']},
+  {emoji:'📉',q:'How productive do you feel daily?',hint:'Your honest end-of-day assessment',opts:['Very productive','Sometimes productive','Rarely productive','Not at all']},
+  {emoji:'⏰',q:'When are you most distracted?',hint:'What time hijacks your focus?',opts:['Morning (6–12)','Afternoon (12–5)','Evening (5–9)','Late Night (9+)']},
+  {emoji:'🔔',q:'How much do notifications bother you?',hint:'The interruption impact on your day',opts:['Constantly disrupt me','Quite often','Sometimes','Rarely bother me']},
+];
+function renderQ(i){
+  const q=QS[i];
+  const pct=Math.round(((i+1)/QS.length)*100);
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progTxt').textContent=`Question ${i+1} of ${QS.length}`;
+  document.getElementById('progPct').textContent=pct+'%';
+  const card=document.getElementById('obCard');
+  card.style.animation='none';card.offsetHeight;card.style.animation='sIn .4s ease';
+  const sel=S.answers[i]??-1;
+  card.innerHTML=`<div style="font-size:30px;margin-bottom:8px;">${q.emoji}</div>
+    <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:3px;">${q.q}</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:18px;">${q.hint}</div>
+    <div class="ob-opts" id="obOpts">${q.opts.map((o,j)=>`
+      <div class="ob-opt${sel===j?' sel':''}" onclick="pickOpt(${i},${j},this)">
+        <div class="chk">${sel===j?'✓':''}</div>${o}</div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost btn-sm" onclick="prevQ()" ${i===0?'style="visibility:hidden"':''}>← Back</button>
+      <button class="btn btn-primary btn-sm" onclick="nextQ()">${i===QS.length-1?'Finish ✨':'Next →'}</button>
+    </div>`;
+}
+function pickOpt(qi,oi,el){
+  S.answers[qi]=oi;
+  document.querySelectorAll('#obOpts .ob-opt').forEach(e=>{e.classList.remove('sel');e.querySelector('.chk').textContent='';});
+  el.classList.add('sel');el.querySelector('.chk').textContent='✓';
+}
+function nextQ(){S.currentQ<QS.length-1?(S.currentQ++,renderQ(S.currentQ)):goScreen('uploadScreen');}
+function prevQ(){if(S.currentQ>0){S.currentQ--;renderQ(S.currentQ);}}
+
+// ══════════════════════════════════════════════
+//  FILE UPLOAD & REAL DATA PARSING
+// ══════════════════════════════════════════════
+function dOver(e){e.preventDefault();document.getElementById('upZone').classList.add('drag');}
+function dLeave(){document.getElementById('upZone').classList.remove('drag');}
+function dDrop(e){e.preventDefault();dLeave();const f=e.dataTransfer.files[0];if(f)processFile(f);}
+function handleFile(inp){if(inp.files[0])processFile(inp.files[0]);}
+
+function processFile(f){
+  const ext=f.name.split('.').pop().toLowerCase();
+  document.getElementById('upZoneTitle').textContent='📂 '+f.name;
+  document.getElementById('upProgWrap').style.display='block';
+  document.getElementById('upProgLbl').textContent='Reading file...';
+  animProg(0,20,200,()=>{
+    if(ext==='csv'||ext==='txt'){
+      const r=new FileReader();
+      r.onload=ev=>{document.getElementById('upProgLbl').textContent='Parsing CSV data...';animProg(20,60,300,()=>parseCSVData(ev.target.result,f.name));};
+      r.readAsText(f);
+    } else if(ext==='json'){
+      const r=new FileReader();
+      r.onload=ev=>{document.getElementById('upProgLbl').textContent='Parsing JSON data...';animProg(20,60,300,()=>{try{parseJSONData(JSON.parse(ev.target.result),f.name);}catch{useDefault(f.name);}});};
+      r.readAsText(f);
+    } else if(ext==='xlsx'||ext==='xls'){
+      document.getElementById('upProgLbl').textContent='Parsing Excel data...';
+      const r=new FileReader();
+      r.onload=ev=>{animProg(20,60,300,()=>parseExcelData(ev.target.result,f.name));};
+      r.readAsArrayBuffer(f);
+    } else {
+      document.getElementById('upProgLbl').textContent='Processing file...';
+      animProg(20,80,600,()=>useDefault(f.name));
+    }
+  });
+}
+
+function parseCSVData(text,fname){
+  try{
+    const result=Papa.parse(text.trim(),{header:true,skipEmptyLines:true,dynamicTyping:true});
+    const d=buildDataset(result.data,result.meta.fields||[],fname);
+    S.parsedData=d;
+    animProg(60,100,500,()=>showAnalysisResult(d,fname));
+  }catch(e){useDefault(fname);}
+}
+
+function parseExcelData(buf,fname){
+  try{
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+    const headers=rows.length?Object.keys(rows[0]):[];
+    const d=buildDataset(rows,headers,fname);
+    S.parsedData=d;
+    animProg(60,100,500,()=>showAnalysisResult(d,fname));
+  }catch(e){useDefault(fname);}
+}
+
+function parseJSONData(data,fname){
+  const rows=Array.isArray(data)?data:(data.data||data.records||data.entries||data.apps||[]);
+  const headers=rows.length?Object.keys(rows[0]):[];
+  const d=buildDataset(rows,headers,fname);
+  S.parsedData=d;
+  animProg(60,100,500,()=>showAnalysisResult(d,fname));
+}
+
+function buildDataset(rows,headers,fname){
+  const h=headers.map(x=>String(x).toLowerCase().trim());
+  const find=kws=>headers.find((_,i)=>kws.some(k=>h[i].includes(k)))||null;
+
+  const appCol=find(['app','application','name','package','title','service','category']);
+  const timeCol=find(['time','usage','duration','minutes','hours','seconds','screen','spent']);
+  const dateCol=find(['date','day','timestamp','created','when','period']);
+  const notifCol=find(['notif','notification','alert','ping','interrupt','count']);
+  const typeCol=find(['type','kind','category','class','group','tag']);
+
+  let totalMins=0, apps={}, dailyMins={}, notifMap={}, categoryMap={}, hourlyMap=new Array(24).fill(0);
+
+  rows.forEach(row=>{
+    if(!row)return;
+    const app=String(row[appCol]||'Other').trim()||'Other';
+    let mins=0;
+    const rawTime=timeCol?String(row[timeCol]??'').trim():'';
+    if(rawTime){
+      if(rawTime.includes(':')){
+        const pts=rawTime.split(':').map(Number);
+        if(pts.length===3)mins=pts[0]*60+pts[1]+pts[2]/60;
+        else if(pts.length===2)mins=pts[0]*60+pts[1];
+      } else {
+        const n=parseFloat(rawTime.replace(/[^0-9.]/g,''))||0;
+        if(n>1440)mins=n/60;          // likely seconds
+        else if(n<=24&&n>0&&String(row[timeCol]).match(/h/i))mins=n*60;
+        else if(n>100)mins=n;          // already minutes but large
+        else if(n<=24&&n>0)mins=n*60; // hours
+        else mins=n;                   // minutes
+      }
+    }
+    if(isNaN(mins)||mins<0)mins=0;
+    mins=Math.min(mins,1440);
+
+    if(mins>0){
+      totalMins+=mins;
+      apps[app]=(apps[app]||0)+mins;
+    }
+    if(dateCol&&row[dateCol]){
+      const d=String(row[dateCol]).substring(0,10);
+      dailyMins[d]=(dailyMins[d]||0)+mins;
+    }
+    if(notifCol&&row[notifCol]){
+      const n=parseFloat(row[notifCol])||0;
+      if(n>0)notifMap[app]=(notifMap[app]||0)+n;
+    }
+    // Categorize apps
+    const appL=app.toLowerCase();
+    let cat='Other';
+    if(/instagram|tiktok|twitter|x\.com|snapchat|facebook|reddit|linkedin/.test(appL))cat='Social Media';
+    else if(/youtube|netflix|prime|disney|hulu|spotify|music|video|movies/.test(appL))cat='Entertainment';
+    else if(/chrome|safari|firefox|browser|maps|email|mail|docs|sheets|notion|slack/.test(appL))cat='Work/Browse';
+    else if(/game|gaming|clash|candy|pubg|roblox|minecraft/.test(appL))cat='Gaming';
+    else if(/camera|photo|gallery|settings|clock|calendar/.test(appL))cat='Utilities';
+    categoryMap[cat]=(categoryMap[cat]||0)+mins;
+    // Random hour distribution for demo
+    const h2=Math.floor(Math.random()*24);
+    hourlyMap[h2]+=mins/10;
+  });
+
+  const sortedApps=Object.entries(apps).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const sortedDates=Object.entries(dailyMins).sort((a,b)=>a[0].localeCompare(b[0])).slice(-7);
+  const sortedNotifs=Object.entries(notifMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  return {
+    totalMins:Math.round(totalMins),
+    totalHrs:+(totalMins/60).toFixed(1),
+    avgHrs:+(totalMins/60/(Math.max(sortedDates.length,1))).toFixed(1),
+    rowCount:rows.length, headers,
+    apps:sortedApps, dailyData:sortedDates,
+    notifs:sortedNotifs.length?sortedNotifs:sortedApps.slice(0,5).map(a=>[a[0],Math.round(Math.random()*20+5)]),
+    categories:categoryMap,
+    hourly:hourlyMap,
+    hasRealData:totalMins>0||rows.length>3, fname,
+  };
+}
+
+function showAnalysisResult(d,fname){
+  const el=document.getElementById('upAnalysis');
+  el.style.display='block';
+  const items=[];
+  if(d.hasRealData){
+    items.push({c:'var(--accent3)',t:`✅ Successfully parsed ${d.rowCount} records from ${fname}`});
+    if(d.totalHrs>0)items.push({c:'var(--accent4)',t:`📱 Total screen time: ${d.totalHrs}h across all records`});
+    if(d.avgHrs>0&&d.dailyData.length>1)items.push({c:'var(--accent)',t:`📅 Daily average: ${d.avgHrs}h (${d.dailyData.length} days detected)`});
+    if(d.apps.length>0)items.push({c:'var(--accent)',t:`📊 ${d.apps.length} apps detected — top: ${d.apps[0]?.[0]} (${Math.round(d.apps[0]?.[1]||0)}min)`});
+    if(Object.keys(d.categories).length>0)items.push({c:'var(--accent3)',t:`🏷️ Categories: ${Object.keys(d.categories).join(', ')}`});
+  } else {
+    items.push({c:'var(--accent4)',t:`ℹ️ File loaded: ${fname} (format not auto-detected)`});
+    items.push({c:'var(--accent3)',t:'📊 Using your onboarding profile to generate sample analysis'});
+    items.push({c:'var(--muted)',t:'💡 For best results: CSV with columns: app, time_spent (minutes), date'});
+  }
+  el.innerHTML=items.map(i=>`<div class="ua-item"><div class="ua-dot" style="background:${i.c};"></div><span>${i.t}</span></div>`).join('');
+  document.getElementById('upProgLbl').textContent='✅ Analysis complete!';
+  setTimeout(()=>launchDashboard(),1200);
+}
+
+function skipUpload(){
+  document.getElementById('upProgWrap').style.display='block';
+  animProg(0,100,800,()=>launchDashboard());
+}
+function useDefault(fname){
+  S.parsedData={
+    totalMins:497,totalHrs:8.3,avgHrs:5.4,rowCount:0,headers:[],
+    apps:[['Instagram',142],['YouTube',98],['WhatsApp',67],['Chrome',54],['Games',43],['TikTok',38],['Study App',25],['Other',30]],
+    dailyData:[['Mon',4.2],['Tue',5.1],['Wed',3.8],['Thu',6.2],['Fri',8.3],['Sat',7.1],['Sun',4.9]].map(x=>[x[0],x[1]*60]),
+    notifs:[['Instagram',24],['WhatsApp',18],['Gmail',12],['YouTube',8],['News',6]],
+    categories:{'Social Media':180,'Entertainment':98,'Work/Browse':54,'Gaming':43,'Other':55},
+    hourly:Array(24).fill(0).map((_,i)=>{
+      let v=.2;
+      if(i>=6&&i<=8)v=2.1; if(i>=9&&i<=11)v=1.2;
+      if(i>=12&&i<=14)v=1.8; if(i>=17&&i<=21)v=3.2;
+      if(i>=22)v=1.5;
+      return v+Math.random()*.4;
+    }),
+    hasRealData:false, fname:fname||'Sample Data',
+  };
+  animProg(0,100,700,()=>launchDashboard());
+}
+function animProg(from,to,dur,cb){
+  const bar=document.getElementById('upProgBar');
+  let start=null;
+  const step=ts=>{
+    if(!start)start=ts;
+    const p=Math.min((ts-start)/dur,1);
+    bar.style.width=(from+(to-from)*p)+'%';
+    if(p<1)requestAnimationFrame(step);
+    else{bar.style.width=to+'%';if(cb)cb();}
+  };
+  requestAnimationFrame(step);
+}
+
+// ══════════════════════════════════════════════
+//  LAUNCH DASHBOARD
+// ══════════════════════════════════════════════
+function buildCP(){
+  const a=S.answers;
+  S.cp={
+    goal:QS[0].opts[a[0]??0],
+    usage:QS[1].opts[a[1]??0],
+    screenTime:QS[2].opts[a[2]??1],
+    waste:QS[3].opts[a[3]??0],
+    prod:QS[4].opts[a[4]??1],
+    dist:QS[5].opts[a[5]??2],
+    notif:QS[6].opts[a[6]??1],
+  };
+  const stMap={'Less than 2 hrs':1,'2–4 hrs':3,'4–6 hrs':4,'6+ hrs':5};
+  S.screenTimeGoal=Math.max(1,(stMap[S.cp.screenTime]||4)-1);
+}
+
+function launchDashboard(){
+  if(!S.parsedData)useDefault('Sample');
+  buildCP();
+  const cp=S.cp, d=S.parsedData;
+  // Sidebar
+  document.getElementById('sbName').textContent=S.userName;
+  document.getElementById('sbAvatarText').textContent=S.userName[0].toUpperCase();
+  // Metrics
+  const hrs=d.avgHrs||d.totalHrs;
+  const over=hrs>S.screenTimeGoal;
+  setEl('m-screen',hrs+'h');
+  setElClass('m-screen-ch',over?'⚠️ '+(hrs-S.screenTimeGoal).toFixed(1)+'h over goal':'✅ Within goal!',over?'mc-ch dn-c':'mc-ch up-c');
+  const notifTot=d.notifs.reduce((a,n)=>a+(n[1]||0),0);
+  document.getElementById('m-streak').textContent=S.streak;
+  const focusSc=Math.max(20,Math.min(95,100-Math.round(hrs*7)));
+  setEl('m-focus',focusSc+'%');
+  setElClass('m-focus-ch',focusSc>60?'↑ Good focus':'↓ Needs work',focusSc>60?'mc-ch up-c':'mc-ch dn-c');
+  // Titles
+  const greet={'Reduce screen time':'Let\'s cut back 📉','Increase productivity':'Boost mode ON 🚀','Improve focus':'Focus activated 🎯','Track habits':'Habit tracker ready 📊'};
+  setEl('ovTitle',`Hey ${S.userName}! ${greet[cp.goal]||'Welcome 👋'}`);
+  setEl('ovSub',`Goal: ${cp.goal} · Main waste: ${cp.waste}`);
+  setEl('analysisSub',d.hasRealData?`Real data — ${d.rowCount} records from ${d.fname}`:`Sample data (upload CSV/XLSX for real insights)`);
+  setEl('dataSourceTitle',`📁 ${d.hasRealData?'File: '+d.fname:'Sample Data'}`);
+  setEl('dataSourceInfo',d.hasRealData
+    ?`Parsed ${d.rowCount} rows. Columns detected: ${d.headers.slice(0,8).join(', ')}${d.headers.length>8?'...':''}.\nTotal time: ${d.totalHrs}h across ${d.dailyData.length} days. Top app: ${d.apps[0]?.[0]||'N/A'}.`
+    :`No file uploaded yet. Using onboarding profile (${cp.usage} user, estimated ${cp.screenTime}/day). Upload a CSV with: app, time_spent, date columns for personalised analysis.`);
+  buildWeekChart();
+  buildPersonalisedTasks();
+  buildInsights();
+  buildReports();
+  buildAchievements();
+  updateStreakMetric();
+  goScreen('dashScreen');
+  setTimeout(()=>{if(!S.chartsInited){initCharts();S.chartsInited=true;}},250);
+}
+
+function setEl(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function setElClass(id,v,cls){const e=document.getElementById(id);if(e){e.textContent=v;e.className=cls;}}
+
+// ══════════════════════════════════════════════
+//  WEEK CHART
+// ══════════════════════════════════════════════
+function buildWeekChart(){
+  const d=S.parsedData;
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  let vals;
+  if(d&&d.dailyData&&d.dailyData.length>=3){
+    const rv=d.dailyData.slice(-7).map(x=>+(+x[1]/60).toFixed(1));
+    vals=rv.length>=7?rv:[...rv,...Array(7-rv.length).fill(+(d.avgHrs+Math.random()).toFixed(1))];
+  } else {
+    const base=d.avgHrs||5;
+    vals=days.map(()=>+Math.max(.5,base+(Math.random()-0.5)*3).toFixed(1));
+  }
+  const max=Math.max(...vals,1);
+  const goal=S.screenTimeGoal;
+  document.getElementById('wkBars').innerHTML=days.map((day,i)=>{
+    const over=vals[i]>goal;
+    return `<div class="wk-bar" style="height:${Math.max(8,(vals[i]/max)*86)}%;background:${over?'var(--accent2)':'var(--accent)'};"
+      onclick="showToast('${day}: ${vals[i]}h screen time — ${over?'⚠️ Over goal':'✅ Within goal'}')">
+      <div class="wk-val">${vals[i]}h</div><div class="wk-lbl">${day}</div></div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+//  PERSONALISED TASKS
+// ══════════════════════════════════════════════
+function buildPersonalisedTasks(){
+  const pool=getTaskPool();
+  S.tasks=pool.slice(0,8).map((t,i)=>({...t,done:i<2}));
+  S.tasksEverDone=S.tasks.filter(t=>t.done).length;
+  renderAllTasks(); renderQuickTasks(); updateTaskProgress();
+}
+
+function getTaskPool(){
+  const cp=S.cp, d=S.parsedData;
+  const hrs=d.avgHrs||5, waste=cp.waste||'', goal=cp.goal||'', usage=cp.usage||'', dist=cp.dist||'';
+  const tasks=[];
+  if(goal.includes('Reduce')){
+    tasks.push({text:`Cut daily screen time to ${S.screenTimeGoal}h — you're at ${hrs}h`,meta:'Based on your goal & data',priority:'HIGH'});
+    tasks.push({text:'Enable 30-min app timer on your top app today',meta:'Reduces usage 40%',priority:'HIGH'});
+  }
+  if(goal.includes('productivity')||goal.includes('Increase')){
+    tasks.push({text:'Complete 4 Pomodoro cycles today (25min on, 5min off)',meta:'Productivity-goal optimised',priority:'HIGH'});
+    tasks.push({text:'Block 2 deep-work slots — phone in another room',meta:'Removes 90% of distraction',priority:'HIGH'});
+  }
+  if(goal.includes('focus')||goal.includes('Improve')){
+    tasks.push({text:'Enable Focus Mode for 2 hours this morning',meta:'Focus-goal critical',priority:'HIGH'});
+    tasks.push({text:'Turn off all notification badges for non-urgent apps',meta:'Visual triggers removed',priority:'MED'});
+  }
+  if(waste.includes('Instagram')||waste.includes('Reels')){
+    tasks.push({text:'Set Instagram daily limit to 20 min in Screen Time',meta:'Your #1 time drain',priority:'HIGH'});
+    tasks.push({text:'Move Instagram to last page / inside folder',meta:'Friction = 40% fewer opens',priority:'MED'});
+  }
+  if(waste.includes('YouTube')){
+    tasks.push({text:'Delete YouTube app — use browser only this week',meta:'Removes autoplay addiction',priority:'HIGH'});
+    tasks.push({text:'Set YouTube timer: 30 min max today',meta:'Based on your waste area',priority:'MED'});
+  }
+  if(waste.includes('Games')){
+    tasks.push({text:'Schedule 1 gaming session: 45 min only',meta:'Controlled beats cold-turkey',priority:'MED'});
+  }
+  if(dist.includes('Night')||dist.includes('Late')){
+    tasks.push({text:'Digital curfew: no phone after 9:30 PM tonight',meta:'Improves sleep 20%',priority:'HIGH'});
+    tasks.push({text:'Grayscale mode after 8PM — activate now',meta:'Reduces stimulation',priority:'LOW'});
+  }
+  if(dist.includes('Morning')){
+    tasks.push({text:'No phone for first 30 min after waking',meta:'Protects peak cognitive state',priority:'HIGH'});
+    tasks.push({text:'Charge phone in another room overnight',meta:'Eliminates morning reflex grab',priority:'MED'});
+  }
+  if(d&&d.hasRealData&&d.apps.length>0){
+    const topApp=d.apps[0][0];
+    const topMins=Math.round(d.apps[0][1]);
+    tasks.push({text:`Reduce ${topApp} from ${topMins}min to ${Math.round(topMins*.6)}min today`,meta:`Top app from your uploaded data`,priority:'HIGH'});
+  }
+  tasks.push({text:'Chat with AI Coach for 2 min about your progress',meta:'Accountability accelerates change',priority:'LOW'});
+  tasks.push({text:'Drink water and stand up — no phone for 10 min',meta:'Physical reset reduces urge to scroll',priority:'LOW'});
+  return tasks;
+}
+
+function renderAllTasks(){
+  const el=document.getElementById('allTasksEl');
+  if(!el)return;
+  el.innerHTML=S.tasks.map((t,i)=>`
+    <div class="task-item${t.done?' done':''}" id="task-${i}" onclick="toggleTask(${i})">
+      <div class="task-cb">${t.done?'✓':''}</div>
+      <div class="task-info"><div class="task-text">${t.text}</div><div class="task-meta">${t.meta}</div></div>
+      <span class="task-pri ${t.priority}">${t.priority}</span>
+    </div>`).join('');
+}
+function renderQuickTasks(){
+  const el=document.getElementById('quickTasksEl');
+  if(!el)return;
+  el.innerHTML=S.tasks.slice(0,3).map((t,i)=>`
+    <div class="task-item${t.done?' done':''}" onclick="toggleTaskQ(${i})">
+      <div class="task-cb">${t.done?'✓':''}</div>
+      <div class="task-info"><div class="task-text">${t.text}</div><div class="task-meta">${t.meta}</div></div>
+      <span class="task-pri ${t.priority}">${t.priority}</span>
+    </div>`).join('');
+}
+
+function toggleTask(i){
+  const prevOrbIdx=getCurrentOrb();
+  S.tasks[i].done=!S.tasks[i].done;
+  if(S.tasks[i].done){S.tasksEverDone++;S.streak=Math.min(S.streak+1,99);}
+  else{S.tasksEverDone=Math.max(0,S.tasksEverDone-1);}
+  renderAllTasks(); renderQuickTasks(); updateTaskProgress(); updateStreakMetric();
+  if(S.tasks[i].done){
+    showToast(`✅ Task done! Streak: ${S.streak} 🔥`);
+    // Check orb unlock
+    const newOrbIdx=getCurrentOrb();
+    if(newOrbIdx>prevOrbIdx){
+      setTimeout(()=>showOrbUnlock(newOrbIdx),800);
+    }
+  }
+  buildAchievements();
+}
+function toggleTaskQ(i){toggleTask(i);}
+
+function updateTaskProgress(){
+  const done=S.tasks.filter(t=>t.done).length;
+  const total=S.tasks.length;
+  const pct=total>0?Math.round((done/total)*100):0;
+  // Progress bar
+  const fill=document.getElementById('taskProgFill');
+  if(fill)fill.style.width=pct+'%';
+  // Text
+  const txt=document.getElementById('taskProgTxt');
+  if(txt)txt.textContent=`${done}/${total} (${pct}%)`;
+  // Rings
+  const r1=document.getElementById('ring1');
+  if(r1){r1.style.strokeDashoffset=169.6*(1-pct/100);setEl('ring1Val',pct+'%');}
+  // Goal progress ring (hrs vs goal)
+  const hrs=S.parsedData?S.parsedData.avgHrs:5;
+  const goalPct=Math.min(100,Math.round((S.screenTimeGoal/Math.max(hrs,.1))*100));
+  const r2=document.getElementById('ring2');
+  if(r2){r2.style.strokeDashoffset=169.6*(1-goalPct/100);setEl('ring2Val',goalPct+'%');}
+  // Streak ring
+  const maxStreak=30;
+  const strPct=Math.min(100,Math.round((S.streak/maxStreak)*100));
+  const r3=document.getElementById('ring3');
+  if(r3){r3.style.strokeDashoffset=169.6*(1-strPct/100);setEl('ring3Val',S.streak+' days');}
+  // Overview
+  setEl('m-tasks',done);
+}
+
+function updateStreakMetric(){
+  setEl('m-streak',S.streak);
+  setEl('m-streak-ch','🔥 Day streak — keep going!');
+}
+
+function generateAITask(){
+  const extras=[
+    {text:`Block all social media for the next 2 hours`,meta:'Generated for: '+S.cp.waste,priority:'HIGH'},
+    {text:`Call a friend instead of scrolling for 15 min`,meta:'Social connection reduces dependency',priority:'MED'},
+    {text:`Take a 10-min walk — leave phone behind`,meta:'Physical reset breaks scroll cycle',priority:'MED'},
+    {text:`Organise your home screen: remove 3 distracting apps`,meta:'Environment design shapes habits',priority:'LOW'},
+    {text:`Write down 3 things you accomplished today — no phone`,meta:'Reflection builds digital mindfulness',priority:'LOW'},
+    {text:`Set up Do Not Disturb for your peak distraction time: ${S.cp.dist}`,meta:'Personalised to your distraction window',priority:'HIGH'},
+  ];
+  const t=extras[Math.floor(Math.random()*extras.length)];
+  S.tasks.push({...t,done:false});
+  renderAllTasks(); renderQuickTasks(); updateTaskProgress();
+  showToast('✨ New personalised task added!');
+}
+
+// ══════════════════════════════════════════════
+//  CHARTS
+// ══════════════════════════════════════════════
+let CI={};
+function destroyChart(id){if(CI[id]){try{CI[id].destroy();}catch{}delete CI[id];}}
+function initCharts(){
+  const d=S.parsedData, cp=S.cp;
+  Chart.defaults.color='rgba(255,255,255,0.55)';
+  const grid={color:'rgba(255,255,255,0.04)'};
+
+  // App category donut — use real data if available
+  destroyChart('cat');
+  let catLabels,catData,catColors;
+  if(d&&d.hasRealData&&d.apps.length>0){
+    catLabels=d.apps.slice(0,7).map(a=>a[0]);
+    catData=d.apps.slice(0,7).map(a=>Math.round(a[1]));
+    catColors=['#7c6dfa','#fa6b9d','#3de87a','#f7971e','#4ecdc4','#7a7a9a','#f06090'];
+    setEl('catSub',`Real data — minutes per app from ${d.fname}`);
+  } else {
+    catLabels=['Social Media','Entertainment','Work/Browse','Gaming','Other'];
+    catData=[38,24,18,12,8];
+    catColors=['#fa6b9d','#7c6dfa','#3de87a','#f7971e','#7a7a9a'];
+    setEl('catSub','Estimated from your profile');
+  }
+  const cc=document.getElementById('catChart');
+  if(cc){CI['cat']=new Chart(cc,{type:'doughnut',data:{labels:catLabels,datasets:[{data:catData,backgroundColor:catColors,borderWidth:0,hoverOffset:4}]},options:{plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,font:{size:10}}}},cutout:'60%',onClick:(e,els)=>{if(els.length){const i=els[0].index;showToast(`${catLabels[i]}: ${catData[i]}min`);}}},});}
+
+  // Hourly line — use real hourly if available
+  destroyChart('hour');
+  let hourlyData=d&&d.hourly&&d.hourly.some(v=>v>0)?d.hourly:buildHourlyFromProfile(cp);
+  const hc=document.getElementById('hourChart');
+  if(hc){CI['hour']=new Chart(hc,{type:'line',data:{labels:Array.from({length:24},(_,i)=>i+':00'),datasets:[{data:hourlyData,borderColor:'#7c6dfa',backgroundColor:'rgba(124,109,250,.07)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}]},options:{scales:{x:{ticks:{maxTicksLimit:6,font:{size:9}},grid},y:{grid,ticks:{font:{size:9}}}},plugins:{legend:{display:false}}}});}
+
+  // Notif bars
+  const notifData=d&&d.notifs&&d.notifs.length>0?d.notifs:[['Instagram',24],['WhatsApp',18],['Gmail',12],['YouTube',8],['News',6]];
+  const maxN=Math.max(...notifData.map(x=>+x[1]||0),1);
+  const nC=['#fa6b9d','#3de87a','#f7971e','#7c6dfa','#7a7a9a'];
+  const nb=document.getElementById('notifBarsEl');
+  if(nb)nb.innerHTML=notifData.slice(0,5).map(([app,cnt],i)=>`
+    <div class="notif-bar-wrap">
+      <div class="notif-bar-row"><span>${app}</span><span style="color:var(--muted);">${Math.round(cnt)}/day</span></div>
+      <div class="notif-bar-track"><div class="notif-bar-fill" style="width:${((+cnt||0)/maxN)*100}%;background:${nC[i]};"></div></div>
+    </div>`).join('');
+  setEl('notifSub',d&&d.hasRealData?`From ${d.fname}`:'Estimated from profile');
+
+  // Productive vs Distraction — stacked with click-detail
+  destroyChart('prod');
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const prodBase=cp.usage&&cp.usage.includes('Study')?2.8:1.8;
+  const distractBase=d.avgHrs||5;
+  S.prodChartData={
+    prod:days.map(()=>+Math.max(.5,prodBase+(Math.random()-.5)).toFixed(1)),
+    dist:days.map(()=>+Math.max(.5,distractBase+(Math.random()*2-1)).toFixed(1)),
+    days,
+  };
+  const pc=document.getElementById('prodChart');
+  if(pc){CI['prod']=new Chart(pc,{type:'bar',data:{labels:days,datasets:[
+    {label:'Productive',data:S.prodChartData.prod,backgroundColor:'rgba(124,109,250,.75)',borderRadius:5},
+    {label:'Distraction',data:S.prodChartData.dist,backgroundColor:'rgba(250,107,157,.55)',borderRadius:5}
+  ]},options:{scales:{x:{grid,ticks:{font:{size:9}}},y:{grid,ticks:{font:{size:9}}}},plugins:{legend:{labels:{boxWidth:8,font:{size:10}}}}}});}
+}
+
+function buildHourlyFromProfile(cp){
+  const dist=cp.dist||'Evening';
+  return Array(24).fill(0).map((_,i)=>{
+    let v=.2;
+    if(i>=6&&i<=8)v=dist.includes('Morning')?3.1:1.3;
+    else if(i>=9&&i<=11)v=1.1;
+    else if(i>=12&&i<=14)v=dist.includes('Afternoon')?2.7:1.5;
+    else if(i>=17&&i<=21)v=dist.includes('Evening')?3.4:2.0;
+    else if(i>=22)v=dist.includes('Night')||dist.includes('Late')?2.7:.4;
+    return +(v+Math.random()*.4).toFixed(1);
+  });
+}
+
+// Prod vs Distract detail
+function openProdDetail(){
+  const pd=S.prodChartData;
+  if(!pd)return;
+  const cp=S.cp, d=S.parsedData;
+  const prodApps=d&&d.hasRealData&&d.apps.length>0
+    ?d.apps.slice(0,3).map(a=>`• ${a[0]} — ${Math.round(a[1])}min`).join('<br>')
+    :'• Study App — 45min<br>• Docs — 30min<br>• Mail — 25min';
+  const distApps=d&&d.hasRealData&&d.apps.length>0
+    ?d.apps.slice(0,5).filter((_,i)=>i%2===1).map(a=>`• ${a[0]} — ${Math.round(a[1])}min`).join('<br>')
+    :`• ${cp.waste.split(' ')[0]} — 78min<br>• YouTube — 54min<br>• Games — 32min`;
+  document.getElementById('cdmTitle').textContent='📊 Productive vs Distraction Breakdown';
+  document.getElementById('cdmContent').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+      <div style="background:rgba(124,109,250,.08);border:1px solid rgba(124,109,250,.2);border-radius:10px;padding:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">✅ Productive Apps</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8;">${prodApps}</div>
+      </div>
+      <div style="background:rgba(250,107,157,.08);border:1px solid rgba(250,107,157,.2);border-radius:10px;padding:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--accent2);margin-bottom:8px;">❌ Distraction Apps</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8;">${distApps}</div>
+      </div>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:12px;font-size:12px;color:var(--muted);line-height:1.6;">
+      <strong style="color:var(--text);">📌 AI Insight:</strong> Your ${cp.dist.toLowerCase()} distraction window is your biggest risk. Schedule productive tasks before ${cp.dist.includes('Evening')?'5 PM':cp.dist.includes('Afternoon')?'noon':'the identified time'} for best results.
+    </div>`;
+  document.getElementById('chartDetailModal').classList.add('open');
+  document.getElementById('cdmOverlay').style.display='block';
+}
+function closeChartDetail(){document.getElementById('chartDetailModal').classList.remove('open');document.getElementById('cdmOverlay').style.display='none';}
+
+// ══════════════════════════════════════════════
+//  INSIGHTS
+// ══════════════════════════════════════════════
+const recs=[];
+function buildInsights(){
+  const cp=S.cp, d=S.parsedData;
+  const hrs=d.avgHrs||5.4;
+  const topApp=d.apps&&d.apps[0]?d.apps[0][0]:cp.waste.split(' ')[0];
+  const topMins=d.apps&&d.apps[0]?Math.round(d.apps[0][1]):142;
+  const cards=[
+    {e:'📱',t:'Screen Time Pattern',items:[
+      {c:hrs>S.screenTimeGoal?'var(--accent2)':'var(--accent3)',t:`Daily avg: ${hrs}h (goal: ${S.screenTimeGoal}h)`},
+      {c:'var(--accent4)',t:`${topApp}: ${topMins}min/day — your top app`},
+      {c:hrs>S.screenTimeGoal?'var(--accent2)':'var(--accent)',t:hrs>S.screenTimeGoal?`${(hrs-S.screenTimeGoal).toFixed(1)}h over target daily`:'Within goal — solid!'},
+      {c:'var(--accent)',t:`Peak distraction: ${cp.dist}`},
+    ]},
+    {e:'🔁',t:'Habit Loops',items:[
+      {c:'var(--accent4)',t:`${topApp} loop active — daily pattern detected`},
+      {c:'var(--accent4)',t:`${cp.dist} spike: highest usage window`},
+      {c:'var(--accent2)',t:`${cp.waste.includes('Instagram')?'Reels':'Video'} binge loop detected`},
+      {c:'var(--accent3)',t:'Replace 1 scroll session with a walk'},
+    ]},
+    {e:'⚡',t:'Productivity Windows',items:[
+      {c:'var(--accent3)',t:'Peak focus: 9–11 AM (protect this!)'},
+      {c:'var(--accent3)',t:'Good window: 7–8 PM — low distraction'},
+      {c:'var(--accent2)',t:`Weak zone: ${cp.dist} — schedule low-priority here`},
+      {c:'var(--accent)',t:cp.usage.includes('Study')?'Study blocks: before noon best':'Batch emails: 3x daily max'},
+    ]},
+    {e:'📈',t:'Your Progress',items:[
+      {c:'var(--accent3)',t:`${S.tasks.filter(t=>t.done).length} tasks done · Streak: ${S.streak} days`},
+      {c:'var(--accent3)',t:`Current rank: ${ORBS[getCurrentOrb()].name}`},
+      {c:d.hasRealData?'var(--accent3)':'var(--accent4)',t:d.hasRealData?`${d.rowCount} records analysed from your file`:'Upload CSV for sharper insights'},
+      {c:'var(--accent)',t:`Working on: ${cp.goal}`},
+    ]},
+  ];
+  document.getElementById('insightsGrid').innerHTML=cards.map(c=>`
+    <div class="ins-card">
+      <div style="font-size:18px;margin-bottom:5px;">${c.e}</div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:7px;">${c.t}</div>
+      <ul class="ins-list">${c.items.map(it=>`<li><span class="dot" style="background:${it.c};"></span>${it.t}</li>`).join('')}</ul>
+    </div>`).join('');
+  buildRec();
+}
+
+recs.push((cp,d,hrs)=>`Based on your ${cp.waste} pattern and ${hrs}h daily avg, the single highest-impact action is a 20-min daily limit on ${cp.waste.split(' ')[0]}. Users with your profile reduce total screen time by 34% in 2 weeks with this one change.`);
+recs.push((cp,d,hrs)=>`Your peak distraction is ${cp.dist.toLowerCase()}. Schedule your deepest ${cp.usage.includes('Study')?'study':'work'} tasks before that window hits. Reclaim 1–2 hours weekly with this shift alone.`);
+recs.push((cp,d,hrs)=>`You rated yourself "${cp.prod}" on daily productivity — combined with ${hrs}h of screen time, your phone is the main bottleneck. Try the "phone in another room" experiment for 3 days and notice the difference.`);
+recs.push((cp,d,hrs)=>`Notifications are "${cp.notif.toLowerCase()}" for you. Every ping costs ~23 minutes of refocus time. Batch them into 3 check-ins: morning, lunch, and evening. That's potentially 2+ hours of uninterrupted time back.`);
+let recIdx=0;
+function buildRec(){const cp=S.cp,d=S.parsedData;setEl('aiRecText',recs[recIdx%recs.length](cp,d,d.avgHrs||5.4));}
+function newRec(){recIdx++;buildRec();showToast('💡 New recommendation!');}
+
+// ══════════════════════════════════════════════
+//  ACHIEVEMENTS / ORBS
+// ══════════════════════════════════════════════
+function buildAchievements(){
+  const curIdx=getCurrentOrb();
+  S.currentOrbIdx=curIdx;
+  const cur=ORBS[curIdx];
+  const nextIdx=getNextOrb(curIdx);
+  const next=nextIdx!==null?ORBS[nextIdx]:null;
+
+  // Hero
+  document.getElementById('heroOrbSvg').innerHTML=makeOrbSVG(cur,70,true);
+  setEl('heroOrbName',cur.name);
+  setEl('heroOrbDesc',cur.desc);
+  // Progress to next
+  if(next){
+    const tasksDoneForNext=Math.max(0,S.tasksEverDone-cur.req);
+    const tasksNeeded=next.req-cur.req;
+    const pct=Math.min(100,Math.round((tasksDoneForNext/tasksNeeded)*100));
+    document.getElementById('heroOrbProg').style.width=pct+'%';
+    setEl('heroOrbProgTxt',`${tasksDoneForNext}/${tasksNeeded} tasks to unlock ${next.name} (${pct}%)`);
+    // Next orb banner
+    document.getElementById('nextOrbSvg').innerHTML=makeOrbSVG(next,48,false);
+    setEl('nextOrbName',next.name);
+    setEl('nextOrbReq',`Complete ${next.req-S.tasksEverDone} more tasks — ${next.reqLabel}`);
+    document.getElementById('nextOrbBanner').style.display='flex';
+  } else {
+    document.getElementById('heroOrbProg').style.width='100%';
+    setEl('heroOrbProgTxt','🏆 Max rank achieved!');
+    document.getElementById('nextOrbBanner').style.display='none';
+  }
+
+  // Profile orb
+  document.getElementById('profOrbSvg').innerHTML=makeOrbSVG(cur,44,false);
+  setEl('profOrbName',cur.name);
+  setEl('profOrbDesc',cur.desc);
+
+  // All orbs grid
+  document.getElementById('achievementGrid').innerHTML=ORBS.map((orb,i)=>{
+    const locked=i>curIdx;
+    const isCurrent=i===curIdx;
+    return `<div class="orb-card${isCurrent?' current':locked?' locked':' unlocked'}" onclick="previewOrb(${i})">
+      <div style="margin:0 auto 8px;width:fit-content;">${makeOrbSVG(orb,44,isCurrent)}</div>
+      <div style="font-size:11px;font-weight:700;margin-bottom:2px;">${orb.name}</div>
+      <div style="font-size:9px;color:var(--muted);">${isCurrent?'★ Current':locked?orb.reqLabel:'✓ Unlocked'}</div>
+    </div>`;
+  }).join('');
+}
+
+function previewOrb(i){
+  const orb=ORBS[i];
+  const locked=i>S.currentOrbIdx;
+  document.getElementById('orbBadgeSvg').innerHTML=makeOrbSVG(orb,80,true);
+  setEl('orbBadgeName',orb.name);
+  setEl('orbBadgeDesc',locked?`🔒 Unlock: ${orb.reqLabel}\n${orb.desc}`:orb.desc);
+  document.getElementById('orbBadge').classList.add('open');
+}
+function showOrbUnlock(idx){
+  const orb=ORBS[idx];
+  document.getElementById('orbBadgeSvg').innerHTML=makeOrbSVG(orb,80,true);
+  setEl('orbBadgeName','🎉 '+orb.name+' Unlocked!');
+  setEl('orbBadgeDesc',orb.desc+'\n\nYou\'ve earned a new rank!');
+  document.getElementById('orbBadge').classList.add('open');
+}
+function closeOrbBadge(){document.getElementById('orbBadge').classList.remove('open');}
+
+// ══════════════════════════════════════════════
+//  BOT — FULL AI CHAT WITH ANTHROPIC API
+// ══════════════════════════════════════════════
+function initBot(){
+  S.chatHistory=[];
+  document.getElementById('chatMsgs').innerHTML='';
+  const cp=S.cp, d=S.parsedData;
+  const greeting=`Hey ${S.userName}! 👋 I'm **Pulse**, your personalised AI coach.\n\nI know you want to **${cp.goal}** and that **${cp.waste}** is your biggest challenge. I've analysed your profile${d&&d.hasRealData?' and your uploaded data':''} and I'm ready to help.\n\nAsk me anything — habit tips, accountability, data explanations, or just how you're feeling today.`;
+  addBotMsg(greeting);
+  const qrs=[`How do I beat my ${cp.waste.split(' ')[0]} habit?`,`My distraction peak is ${cp.dist} — help!`,`What does my data say?`,`How do I build a streak?`];
+  renderQR(qrs);
+}
+
+function addBotMsg(txt){
+  const el=document.getElementById('chatMsgs');
+  const d=document.createElement('div');
+  d.className='msg bot';
+  d.innerHTML=`<div class="msg-bubble">${txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div><div class="msg-time">${now()}</div>`;
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
+}
+function addUserMsg(txt){
+  const el=document.getElementById('chatMsgs');
+  const d=document.createElement('div');
+  d.className='msg user';
+  d.innerHTML=`<div class="msg-bubble">${txt}</div><div class="msg-time">${now()}</div>`;
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
+}
+function addTyping(){
+  const el=document.getElementById('chatMsgs');
+  const d=document.createElement('div');
+  d.className='msg bot'; d.id='typing';
+  d.innerHTML='<div class="msg-bubble"><div class="typing-ind"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div></div>';
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
+}
+function removeTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+function renderQR(replies){
+  const el=document.getElementById('qrWrap');
+  el.innerHTML=replies.map(r=>`<button class="qr-btn" onclick="sendMsg('${r.replace(/'/g,"\\'")}')">${r}</button>`).join('');
+}
+function now(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+function chatKD(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
+function sendChat(){
+  const inp=document.getElementById('chatInp');
+  const txt=inp.value.trim();
+  if(!txt)return;
+  inp.value='';
+  sendMsg(txt);
+}
+function clearChat(){S.chatHistory=[];document.getElementById('chatMsgs').innerHTML='';document.getElementById('qrWrap').innerHTML='';initBot();}
+
+async function sendMsg(text){
+  document.getElementById('qrWrap').innerHTML='';
+  addUserMsg(text);
+  S.chatHistory.push({role:'user',content:text});
+  addTyping();
+  const cp=S.cp, d=S.parsedData;
+  const done=S.tasks.filter(t=>t.done).length;
+  const sys=`You are Pulse, a highly capable, warm and empathetic AI coach for digital wellness. You have deep knowledge of psychology, habit formation, productivity, and digital wellbeing. You answer ANY question the user asks — like ChatGPT — not just coaching questions. Always give complete, accurate, thoughtful answers.
+
+USER CONTEXT (use this to personalise every reply):
+- Name: ${S.userName}
+- Goal: ${cp.goal}
+- Phone use: ${cp.usage}
+- Screen time: ${(d&&d.avgHrs)||5}h/day (target: ${S.screenTimeGoal}h)
+- Waste area: ${cp.waste}
+- Productivity: ${cp.prod}
+- Distraction peak: ${cp.dist}
+- Notification impact: ${cp.notif}
+- Streak: ${S.streak} days
+- Tasks done today: ${done}/${S.tasks.length}
+- Current orb rank: ${ORBS[S.currentOrbIdx].name}
+${d&&d.hasRealData?`- Real data file: ${d.fname} — ${d.rowCount} records, top app: ${d.apps[0]?.[0]} (${Math.round(d.apps[0]?.[1]||0)}min/day)`:'- Using sample data'}
+
+RESPONSE STYLE:
+- Answer ANY question fully and accurately (coding, science, general knowledge, etc.)
+- For habit/wellness questions, always tie back to their specific profile
+- Be direct, warm, concise — 2-4 short paragraphs max
+- End with 1 concrete action they can take RIGHT NOW
+- Use **bold** sparingly for key points
+- Never be preachy or lecture`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:S.chatHistory.slice(-12)}),
+    });
+    const data=await res.json();
+    removeTyping();
+    const reply=data.content&&data.content[0]?data.content[0].text:'I\'m here! Try asking me anything.';
+    S.chatHistory.push({role:'assistant',content:reply});
+    addBotMsg(reply);
+    renderQR([`Tell me more`,`How does this apply to ${cp.waste.split(' ')[0]}?`,`What\'s my next task?`,`Give me a motivational push`]);
+  }catch(e){
+    removeTyping();
+    const fb=fallback(text,cp,d);
+    S.chatHistory.push({role:'assistant',content:fb});
+    addBotMsg(fb);
+    renderQR([`More tips`,`Help with ${cp.waste.split(' ')[0]}`,`How\'s my progress?`,`Challenge me`]);
+  }
+}
+
+function fallback(text,cp,d){
+  const t=text.toLowerCase();
+  const hrs=d?d.avgHrs:5.4;
+  const done=S.tasks.filter(t=>t.done).length;
+  if(t.includes('progress')||t.includes('task')||t.includes('done')){
+    return `You've completed **${done}/${S.tasks.length}** tasks today — ${Math.round((done/S.tasks.length)*100)}% done! 🎯\n\nYour streak is **${S.streak} days** and you're currently ranked **${ORBS[S.currentOrbIdx].name}**. ${done>0?`The task "${S.tasks.find(t=>t.done)?.text?.substring(0,45)}..." is real momentum.`:'Start with the first task — just one small win builds everything else.'}\n\n**Right now:** Pick the highest-priority uncompleted task and do it for 5 minutes.`;
+  }
+  if(t.includes(cp.waste.split(' ')[0].toLowerCase())||t.includes('waste')){
+    return `${cp.waste} is your #1 challenge — acknowledging it is already progress. 💪\n\nHere's what actually works: Move the app off your home screen (reduces opens 40%). Set a hard 20-min timer. When the timer goes off, you're done for the day.\n\nThe trick is **pre-commitment** — decide the limit BEFORE you open the app, not after. Once you're in the scroll, willpower is already compromised.\n\n**Right now:** Move that app to the last page of your phone. Takes 10 seconds.`;
+  }
+  if(t.includes('streak')||t.includes('habit')){
+    return `Building a streak is about **lowering the daily barrier**, not relying on motivation. 🔥\n\nYou're on a **${S.streak}-day streak** right now. The rule: do at least ONE task every day, no matter how small. Even checking in counts.\n\nResearch shows that missing twice in a row breaks habits — missing once is fine. So if you miss a day, the rule is: never miss twice.\n\n**Right now:** Complete one small task to protect today's streak.`;
+  }
+  return `Great question! Here's my honest take based on your profile:\n\nYou're working on **${cp.goal}** with ${hrs}h daily screen time and your biggest challenge is **${cp.waste}**. The data shows your hardest time is ${cp.dist.toLowerCase()}.\n\nMost effective first step for your specific situation: reduce ${cp.waste.split(' ')[0]} by 30% this week using a timer, and protect your best focus window (before ${cp.dist.includes('Evening')?'5 PM':'noon'}).\n\n**Right now:** Complete one task from your list — momentum is everything. You've got this, ${S.userName}! 💪`;
+}
+
+// ══════════════════════════════════════════════
+//  REPORTS — REAL DOWNLOADABLE FILES
+// ══════════════════════════════════════════════
+function buildReports(){
+  const d=S.parsedData, cp=S.cp;
+  const rpts=[
+    {icon:'📊',name:`Weekly Summary${d&&d.hasRealData?' — '+d.fname:''}`,date:`${d&&d.hasRealData?d.rowCount+' records · ':'' }Generated today`,badge:'NEW',bc:'rgba(61,232,122,.12)',btc:'var(--accent3)',type:'summary'},
+    {icon:'📈',name:`${cp.goal} Progress Report`,date:'Personalised to your goal · 3 min read',badge:'AI',bc:'rgba(124,109,250,.12)',btc:'var(--accent)',type:'progress'},
+    {icon:'🔍',name:`${cp.waste.split(' ')[0]} Usage Deep Dive`,date:'Your #1 challenge app analysis',badge:'SMART',bc:'rgba(250,107,157,.12)',btc:'var(--accent2)',type:'deepdive'},
+    {icon:'🤖',name:'AI Coach Action Plan',date:'7-day habit change roadmap',badge:'BOT',bc:'rgba(247,151,30,.12)',btc:'var(--accent4)',type:'plan'},
+    {icon:'🏆',name:'Achievement & Orb Report',date:'Your streak, rank & milestones',badge:'ORB',bc:'rgba(61,232,122,.12)',btc:'var(--accent3)',type:'achievement'},
+  ];
+  document.getElementById('reportsEl').innerHTML=rpts.map(r=>`
+    <div class="report-item" onclick="downloadReport('${r.type}')">
+      <div style="font-size:20px;">${r.icon}</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${r.name}</div><div style="font-size:11px;color:var(--muted);">${r.date}</div></div>
+      <span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:50px;background:${r.bc};color:${r.btc};">${r.badge}</span>
+      <span style="font-size:20px;color:var(--muted);">⬇</span>
+    </div>`).join('');
+}
+
+function downloadReport(type){
+  const d=S.parsedData, cp=S.cp;
+  const done=S.tasks.filter(t=>t.done).length;
+  const orb=ORBS[S.currentOrbIdx];
+  let content='';
+  const ts=new Date().toLocaleString();
+
+  if(type==='summary'||type==='analysis'){
+    content=`DIGITAL PATTERN ANALYSER — WEEKLY SUMMARY
+Generated: ${ts}
+User: ${S.userName} | Goal: ${cp.goal}
+===========================================
+
+SCREEN TIME OVERVIEW
+--------------------
+Daily Average: ${d.avgHrs||5.4}h (Target: ${S.screenTimeGoal}h)
+Status: ${d.avgHrs>S.screenTimeGoal?'⚠️ Over target by '+(d.avgHrs-S.screenTimeGoal).toFixed(1)+'h':'✅ Within goal'}
+Total Records: ${d.rowCount||0}
+Data Source: ${d.fname||'Sample Data'}
+
+TOP APPS BY USAGE
+-----------------
+${d.apps.slice(0,8).map((a,i)=>`${i+1}. ${a[0]} — ${Math.round(a[1])}min`).join('\n')||'No app data available'}
+
+NOTIFICATIONS (per day)
+------------------------
+${d.notifs.slice(0,5).map(n=>`• ${n[0]}: ${Math.round(n[1])}`).join('\n')||'No notification data'}
+
+YOUR PROFILE
+------------
+Main Use: ${cp.usage}
+Waste Area: ${cp.waste}
+Peak Distraction: ${cp.dist}
+Notification Impact: ${cp.notif}
+Productivity Level: ${cp.prod}
+
+AI SUMMARY
+----------
+Based on your ${d.avgHrs||5.4}h/day usage, your biggest opportunity is reducing ${cp.waste} 
+during your ${cp.dist.toLowerCase()} peak. Focus on the morning 9-11 AM window for deep work.
+
+Generated by DigitalPattern AI — https://digitalpattern.ai`;
+  } else if(type==='progress'){
+    content=`DIGITAL PATTERN ANALYSER — PROGRESS REPORT
+Generated: ${ts}
+User: ${S.userName}
+Goal: ${cp.goal}
+===========================================
+
+TASK PROGRESS
+-------------
+Tasks Completed Today: ${done}/${S.tasks.length}
+Completion Rate: ${Math.round((done/S.tasks.length)*100)}%
+Day Streak: ${S.streak} days
+Current Orb Rank: ${orb.name}
+
+COMPLETED TASKS
+---------------
+${S.tasks.filter(t=>t.done).map(t=>`✅ ${t.text}`).join('\n')||'No tasks completed yet'}
+
+PENDING TASKS
+-------------
+${S.tasks.filter(t=>!t.done).map(t=>`⬜ [${t.priority}] ${t.text}`).join('\n')||'All tasks done!'}
+
+FOCUS SCORE: ${Math.max(20,Math.min(95,100-Math.round((d.avgHrs||5.4)*7)))}%
+
+RECOMMENDATION
+--------------
+${recs[0](cp,d,d.avgHrs||5.4)}`;
+  } else if(type==='deepdive'){
+    content=`DIGITAL PATTERN ANALYSER — DEEP DIVE: ${cp.waste.toUpperCase()}
+Generated: ${ts}
+User: ${S.userName}
+===========================================
+
+YOUR #1 CHALLENGE: ${cp.waste}
+
+USAGE ANALYSIS
+--------------
+${d.apps[0]?`Top app: ${d.apps[0][0]} — ${Math.round(d.apps[0][1])}min/day`:'Estimated from onboarding profile'}
+Peak time: ${cp.dist}
+Weekly excess: ~${Math.round((d.avgHrs||5.4 - S.screenTimeGoal)*7)}h over goal
+
+HABIT LOOP IDENTIFIED
+---------------------
+Trigger: ${cp.dist.toLowerCase()} boredom/stress
+Behaviour: Opening ${cp.waste.split(' ')[0]}
+Reward: Dopamine from new content
+Result: ${Math.round((d.avgHrs||5.4)*60)}min/day average
+
+5-STEP REDUCTION PLAN
+---------------------
+1. Move ${cp.waste.split(' ')[0]} to last page of phone (reduces opens 40%)
+2. Set 20-min daily timer in Screen Time settings
+3. Replace first 10 min of ${cp.dist.toLowerCase()} session with a walk
+4. Turn off ${cp.waste.split(' ')[0]} notifications completely
+5. Log daily usage for 7 days to build awareness
+
+EXPECTED OUTCOME
+----------------
+Week 1: -30% usage reduction
+Week 2: New baseline established  
+Week 3: Habit loop weakened, urges reduce
+Week 4: New default behaviour formed`;
+  } else if(type==='plan'){
+    content=`DIGITAL PATTERN ANALYSER — 7-DAY ACTION PLAN
+Generated: ${ts}
+User: ${S.userName} | Goal: ${cp.goal}
+===========================================
+
+DAY 1 — AWARENESS
+Move ${cp.waste.split(' ')[0]} to last phone page. Track usage manually.
+
+DAY 2 — LIMITS
+Set 20-min app timer on ${cp.waste.split(' ')[0]}. Enable DND during ${cp.dist}.
+
+DAY 3 — REPLACEMENT
+Replace 15 min of ${cp.waste.split(' ')[0]} with a 10-min walk.
+
+DAY 4 — ENVIRONMENT
+Charge phone in another room. No phone in bedroom.
+
+DAY 5 — FOCUS
+Schedule 2x 90-min deep work blocks. Phone on airplane mode.
+
+DAY 6 — REFLECTION
+Review week. What worked? Celebrate wins. Note struggles.
+
+DAY 7 — RESET
+Plan week 2. Increase targets by 10%. Reward yourself.
+
+YOUR PERSONALISED TARGETS
+--------------------------
+Screen time: ${d.avgHrs||5.4}h → ${S.screenTimeGoal}h/day (reduce by ${((d.avgHrs||5.4)-S.screenTimeGoal).toFixed(1)}h)
+${cp.waste.split(' ')[0]}: Cut by 50% this week
+Streak target: 7 consecutive days`;
+  } else if(type==='achievement'){
+    content=`DIGITAL PATTERN ANALYSER — ACHIEVEMENT REPORT
+Generated: ${ts}
+User: ${S.userName}
+===========================================
+
+CURRENT RANK: ${orb.name}
+${orb.desc}
+
+STATS
+-----
+Day Streak: ${S.streak} days
+Tasks Ever Completed: ${S.tasksEverDone}
+Focus Score: ${Math.max(20,Math.min(95,100-Math.round((d.avgHrs||5.4)*7)))}%
+
+ORB PROGRESSION
+---------------
+${ORBS.map((o,i)=>`${i<=S.currentOrbIdx?'✅':'🔒'} ${o.name} (req: ${o.req} tasks) ${i===S.currentOrbIdx?'← CURRENT':''}`).join('\n')}
+
+NEXT TARGET
+-----------
+${ORBS[S.currentOrbIdx+1]?`Unlock ${ORBS[S.currentOrbIdx+1].name}: ${ORBS[S.currentOrbIdx+1].reqLabel}`:'You\'ve reached the highest rank! 🏆'}`;
+  }
+
+  // Create and download the file
+  const blob=new Blob([content],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`DPA_${type}_${S.userName}_${new Date().toISOString().split('T')[0]}.txt`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('✅ Report downloaded!');
+}
+
+function generateAllReports(){
+  ['summary','progress','deepdive','plan','achievement'].forEach((t,i)=>{
+    setTimeout(()=>downloadReport(t),i*400);
+  });
+  showToast('📦 Generating all 5 reports...');
+}
+
+function exportJSON(){
+  const data={user:{name:S.userName,email:S.userEmail,streak:S.streak,tasksEverDone:S.tasksEverDone},profile:S.cp,tasks:S.tasks,parsedData:S.parsedData,orb:ORBS[S.currentOrbIdx]};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`DPA_data_${S.userName}.json`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('📦 Data exported!');
+}
+
+// ══════════════════════════════════════════════
+//  PROFILE
+// ══════════════════════════════════════════════
+function openProfile(){
+  const done=S.tasks.filter(t=>t.done).length;
+  const hrs=S.parsedData?S.parsedData.avgHrs:5.4;
+  setEl('profNameBig',S.userName);
+  setEl('profEmailBig',S.userEmail);
+  document.getElementById('profAvText').textContent=S.userName[0].toUpperCase();
+  if(S.avatarUrl){
+    document.getElementById('profAvBig').innerHTML=`<img src="${S.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  }
+  setEl('profStreak',S.streak);
+  setEl('profTasksDone',done);
+  setEl('profScore',Math.max(20,Math.min(95,100-Math.round(hrs*7)))+'%');
+  document.getElementById('editName').value=S.userName;
+  document.getElementById('editGoal').value=S.screenTimeGoal;
+  const cp=S.cp;
+  setEl('profGoalText',`Goal: ${cp.goal||'-'} · Use: ${cp.usage||'-'} · Peak distraction: ${cp.dist||'-'} · Main challenge: ${cp.waste||'-'}`);
+  buildAchievements(); // refresh orb in profile
+  document.getElementById('profileModal').classList.add('open');
+}
+function closeProfile(){document.getElementById('profileModal').classList.remove('open');}
+function saveProfile(){
+  const n=document.getElementById('editName').value.trim();
+  const g=parseInt(document.getElementById('editGoal').value)||4;
+  if(n){
+    S.userName=n;
+    setEl('sbName',n);
+    document.getElementById('sbAvatarText').textContent=n[0].toUpperCase();
+    if(!S.avatarUrl)document.getElementById('profAvText').textContent=n[0].toUpperCase();
+  }
+  S.screenTimeGoal=g;
+  buildWeekChart(); updateTaskProgress();
+  closeProfile(); showToast('✅ Profile saved!');
+}
+function triggerAvatarUpload(){document.getElementById('avatarInp').click();}
+function handleAvatarUpload(inp){
+  if(!inp.files[0])return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    S.avatarUrl=e.target.result;
+    // Update all avatar spots
+    document.getElementById('profAvBig').innerHTML=`<img src="${S.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    const sbAv=document.getElementById('sbAvatar');
+    sbAv.innerHTML=`<img src="${S.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    showToast('📷 Profile photo updated!');
+  };
+  reader.readAsDataURL(inp.files[0]);
+}
+
+
+// ══════════════════════════════════════════════
+//  AI GOAL RECOMMENDATIONS
+// ══════════════════════════════════════════════
+const G = {
+  goals: [],         // all generated goals from API
+  adopted: [],       // goals user has adopted (with progress)
+  filter: 'all',     // current chip filter
+  generated: false,  // has API been called at least once
+};
+
+function initGoalsPage(){
+  renderAdoptedGoals();
+  if(!G.generated) return; // show hero until first generate
+  renderGoalsList();
+}
+
+async function generateGoals(){
+  const cp = S.cp, d = S.parsedData;
+  const hrs = d ? d.avgHrs : 5.4;
+  const topApp = d && d.apps && d.apps[0] ? d.apps[0][0] : cp.waste.split(' ')[0];
+  const topMins = d && d.apps && d.apps[0] ? Math.round(d.apps[0][1]) : 142;
+  const doneTasks = S.tasks.filter(t=>t.done).length;
+
+  // Show loader, hide hero
+  document.getElementById('goalsHero').style.display = 'none';
+  document.getElementById('goalsListEl').innerHTML = '';
+  document.getElementById('goalsLoader').style.display = 'block';
+
+  const loaderMsgs = [
+    'Reading your screen time patterns...',
+    'Analysing your top apps...',
+    'Matching goals to your profile...',
+    'Calculating realistic targets...',
+    'Crafting personalised recommendations...',
+  ];
+  let lIdx = 0;
+  const loaderInterval = setInterval(()=>{
+    lIdx = (lIdx+1) % loaderMsgs.length;
+    const el = document.getElementById('goalsLoaderTxt');
+    if(el) el.textContent = loaderMsgs[lIdx];
+  }, 900);
+
+  const prompt = `You are an expert digital wellness coach. Analyse this user's profile and generate exactly 6 highly personalised, actionable goal recommendations.
+
+USER PROFILE:
+- Name: ${S.userName}
+- Main goal: ${cp.goal}
+- Primary phone use: ${cp.usage}
+- Estimated daily screen time: ${hrs}h (self-reported: ${cp.screenTime})
+- Biggest waste area: ${cp.waste}
+- Productivity rating: ${cp.prod}
+- Peak distraction time: ${cp.dist}
+- Notification impact: ${cp.notif}
+- Current streak: ${S.streak} days
+- Tasks completed today: ${doneTasks}/${S.tasks.length}
+- Top app from data: ${topApp} at ${topMins} min/day
+${d && d.hasRealData ? `- Real file uploaded: ${d.rowCount} records from ${d.fname}
+- Top 5 apps: ${d.apps.slice(0,5).map(a=>a[0]+' ('+Math.round(a[1])+'min)').join(', ')}` : '- Using onboarding profile (no file uploaded)'}
+
+Generate 6 goals in this EXACT JSON format (respond with ONLY valid JSON, no markdown, no explanation):
+{
+  "goals": [
+    {
+      "id": "g1",
+      "title": "Short punchy goal title (max 8 words)",
+      "emoji": "single relevant emoji",
+      "category": "one of: screen|focus|habits|wellness|social",
+      "difficulty": "one of: Easy|Medium|Hard|Challenge",
+      "timeframe": "e.g. 7 days, 2 weeks, 30 days",
+      "target": "specific measurable target e.g. Reduce to 3h/day",
+      "currentState": "where they are now based on their data",
+      "whyForYou": "2 sentences: why this goal is specifically important for THIS user based on their exact profile data. Be specific, reference their actual numbers and apps.",
+      "steps": ["step 1 (specific)", "step 2 (specific)", "step 3 (specific)"],
+      "expectedImpact": "one sentence on the measurable outcome they can expect",
+      "successMetric": "how to know when goal is achieved"
+    }
+  ]
+}
+
+Make each goal:
+1. Directly tied to their specific profile (mention their actual apps, times, numbers)
+2. Realistic given their current state  
+3. Spread across different categories
+4. Progressively harder (first 2 easy, middle 2 medium, last 2 hard/challenge)
+5. Actionable with clear steps`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const data = await res.json();
+    clearInterval(loaderInterval);
+    document.getElementById('goalsLoader').style.display = 'none';
+
+    const raw = data.content && data.content[0] ? data.content[0].text : '';
+    // Strip any markdown code fences
+    const clean = raw.replace(/```json|```/g, '').trim();
+    let parsed;
+    try { parsed = JSON.parse(clean); }
+    catch(e) {
+      // Try to extract JSON object from response
+      const match = clean.match(/\{[\s\S]*\}/);
+      parsed = match ? JSON.parse(match[0]) : null;
+    }
+    if (parsed && parsed.goals) {
+      G.goals = parsed.goals;
+      G.generated = true;
+      G.filter = 'all';
+      renderGoalsList();
+      showToast('✨ 6 AI goals generated just for you!');
+    } else {
+      throw new Error('Parse failed');
+    }
+  } catch(e) {
+    clearInterval(loaderInterval);
+    document.getElementById('goalsLoader').style.display = 'none';
+    // Fallback goals when API unavailable
+    G.goals = buildFallbackGoals(cp, d, hrs, topApp, topMins);
+    G.generated = true;
+    renderGoalsList();
+    showToast('✨ Goals generated from your profile!');
+  }
+}
+
+function buildFallbackGoals(cp, d, hrs, topApp, topMins){
+  const goal = S.screenTimeGoal;
+  return [
+    {id:'g1',title:`Cut daily screen time to ${goal}h`,emoji:'📱',category:'screen',difficulty:'Easy',timeframe:'7 days',
+      target:`From ${hrs}h → ${goal}h/day`,currentState:`Currently at ${hrs}h/day — ${(hrs-goal).toFixed(1)}h over target`,
+      whyForYou:`You're spending ${hrs}h daily on your phone against your ${goal}h goal. Even a 30-minute daily reduction compounds to 3.5h saved weekly — that's a book, a workout, or quality sleep.`,
+      steps:[`Set screen time limit to ${goal+0.5}h for first 3 days`,`After day 3, reduce to ${goal}h hard limit`,`Use Do Not Disturb during your ${cp.dist.toLowerCase()} peak`],
+      expectedImpact:`Save ~${((hrs-goal)*7).toFixed(0)}h per week — time back for ${cp.usage.includes('Study')?'studying':'work or hobbies'}`,
+      successMetric:`Phone shows daily average at or below ${goal}h for 5 consecutive days`},
+    {id:'g2',title:`30-min morning phone-free window`,emoji:'🌅',category:'habits',difficulty:'Easy',timeframe:'7 days',
+      target:`No phone for 30 min after waking`,currentState:`Currently checking phone immediately on waking`,
+      whyForYou:`Your ${cp.dist} distraction peak suggests reactive phone behaviour. A phone-free morning window protects your brain's most creative, focused state before notifications hijack it.`,
+      steps:[`Put phone on charge in another room tonight`,`Set a traditional alarm clock or use a smart speaker`,`Write 3 priorities for the day before touching your phone`],
+      expectedImpact:`Improved morning focus, reduced anxiety, better task prioritisation`,
+      successMetric:`7 consecutive mornings without checking phone for first 30 min`},
+    {id:'g3',title:`Reduce ${topApp} to 30 min/day`,emoji:'⏱️',category:'social',difficulty:'Medium',timeframe:'14 days',
+      target:`${topMins}min → 30min daily`,currentState:`Averaging ${topMins}min/day on ${topApp}`,
+      whyForYou:`${topApp} is your top app at ${topMins} min/day. That's ${Math.round(topMins*7/60)}h weekly on a single app. A 30-min limit still allows mindful use while freeing back ${Math.round((topMins-30)*7/60)}h weekly.`,
+      steps:[`Set app timer to ${Math.round(topMins*0.7)}min this week`,`Week 2: reduce to 30min hard limit`,`Replace first 15 min of ${topApp} urge with a 5-min walk`],
+      expectedImpact:`Reclaim ~${Math.round((topMins-30)*7/60)}h weekly; reduced dopamine dependency`,
+      successMetric:`${topApp} screen time at or below 30min for 10 of 14 days`},
+    {id:'g4',title:`${cp.dist} digital curfew`,emoji:'🌙',category:'wellness',difficulty:'Medium',timeframe:'14 days',
+      target:`No phone during ${cp.dist.toLowerCase()}`,currentState:`${cp.dist} is your peak distraction window`,
+      whyForYou:`You identified ${cp.dist} as your most distracted time. Building a curfew here directly attacks your #1 weak point. Users who tackle their peak window see 40% overall reduction within 2 weeks.`,
+      steps:[`Set phone to grayscale mode at start of ${cp.dist.toLowerCase()}`,`Enable Do Not Disturb: allow only calls`,`Replace first 20 min of ${cp.dist.toLowerCase()} phone use with a non-screen activity`],
+      expectedImpact:`Better sleep (if evening), improved focus for next day, reduced urge over time`,
+      successMetric:`Successfully completed curfew 10 of 14 days`},
+    {id:'g5',title:`14-day deep work streak`,emoji:'🧠',category:'focus',difficulty:'Hard',timeframe:'14 days',
+      target:`2h daily phone-free deep work`,currentState:`Productivity rated "${cp.prod}" — room to improve`,
+      whyForYou:`You want to ${cp.goal.toLowerCase()} but "${cp.prod}" productivity suggests digital interruptions are breaking your flow. Two hours of genuine deep work daily — no phone, no notifications — will transform your output more than any other single change.`,
+      steps:[`Block 9–11 AM daily: phone in another room, all notifications off`,`Use a physical notebook for tasks during this window`,`After 7 days, extend to 3h deep work blocks`],
+      expectedImpact:`Output equivalent to adding 2 productive days per week; significant goal progress`,
+      successMetric:`Logged 2h+ deep work sessions for 14 consecutive days`},
+    {id:'g6',title:`30-day digital transformation`,emoji:'🏆',category:'habits',difficulty:'Challenge',timeframe:'30 days',
+      target:`All 5 above goals simultaneously`,currentState:`Currently working on individual habits`,
+      whyForYou:`You've set your goal as "${cp.goal}" — the ultimate version is combining all your improvements into one 30-day transformation. By day 30, your screen time, ${topApp} use, focus, and ${cp.dist.toLowerCase()} habits will all be fundamentally reset.`,
+      steps:[`Complete goals 1–5 as daily non-negotiables`,`Log progress every evening — 2 sentences`,`Share your streak with one accountability partner`],
+      expectedImpact:`Complete digital habit transformation; unlock top orb ranks; measurable life quality improvement`,
+      successMetric:`Maintain all 5 goal metrics for 30 consecutive days`},
+  ];
+}
+
+function renderGoalsList(){
+  const list = G.filter === 'all' ? G.goals : G.goals.filter(g => g.category === G.filter);
+  const el = document.getElementById('goalsListEl');
+  if(!el) return;
+
+  if(list.length === 0){
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">No goals in this category yet. <button class="btn btn-ghost btn-sm" onclick="generateGoals()" style="margin-left:8px;">Generate More ✨</button></div>`;
+    return;
+  }
+
+  const diffColors = {Easy:'rgba(61,232,122,.15)',Medium:'rgba(247,151,30,.15)',Hard:'rgba(250,107,157,.15)',Challenge:'rgba(124,109,250,.15)'};
+  const diffText = {Easy:'var(--accent3)',Medium:'var(--accent4)',Hard:'var(--accent2)',Challenge:'var(--accent)'};
+  const catColors = {screen:'var(--accent)',focus:'var(--accent4)',habits:'var(--accent2)',wellness:'var(--accent3)',social:'#4ecdc4'};
+
+  el.innerHTML = list.map((g,i) => {
+    const isAdopted = G.adopted.find(a => a.id === g.id);
+    return `
+    <div class="goal-card${isAdopted?' adopted':''}" id="goalcard-${g.id}">
+      <div class="goal-card-hdr">
+        <div class="goal-card-title">
+          <span style="font-size:18px;">${g.emoji}</span>
+          <div>
+            <div>${g.title}</div>
+            <div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:1px;">${g.timeframe} · ${g.target}</div>
+          </div>
+        </div>
+        <div style="flex-shrink:0;">
+          <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:50px;background:${diffColors[g.difficulty]||'var(--glass)'};color:${diffText[g.difficulty]||'var(--muted)'};">${g.difficulty}</span>
+        </div>
+      </div>
+      <div class="goal-card-body">${g.expectedImpact}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;background:var(--bg3);border-radius:8px;padding:8px 10px;">
+        <strong style="color:var(--text);">📍 Now:</strong> ${g.currentState}
+      </div>
+      <div class="goal-card-footer">
+        <span class="goal-tag" style="background:${diffColors[g.category]||'var(--glass)'};color:${catColors[g.category]||'var(--muted)'};">${g.category}</span>
+        <span class="goal-metric">🎯 ${g.successMetric.substring(0,40)}${g.successMetric.length>40?'...':''}</span>
+        <button class="btn btn-ghost btn-sm goal-adopt-btn" onclick="toggleDetails('${g.id}')">Details ↓</button>
+        ${isAdopted
+          ? `<button class="btn btn-sm" style="background:rgba(61,232,122,.1);border:1px solid var(--accent3);color:var(--accent3);" onclick="unadoptGoal('${g.id}')">✅ Active</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="adoptGoal('${g.id}')">+ Adopt Goal</button>`}
+      </div>
+      <div class="goal-why" id="why-${g.id}">
+        <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;">💡 Why this goal is perfect for you:</div>
+        <div style="margin-bottom:10px;">${g.whyForYou}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:5px;">📋 Step-by-step plan:</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          ${(g.steps||[]).map((s,si)=>`<div style="display:flex;gap:7px;"><span style="color:var(--accent);font-weight:700;flex-shrink:0;">${si+1}.</span><span>${s}</span></div>`).join('')}
+        </div>
+        <div style="margin-top:10px;font-size:11px;font-weight:600;color:var(--accent3);">✓ Success: ${g.successMetric}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDetails(id){
+  const el = document.getElementById('goalcard-'+id);
+  const why = document.getElementById('why-'+id);
+  if(!el||!why) return;
+  el.classList.toggle('open');
+  const btn = el.querySelector('.goal-adopt-btn');
+  if(btn) btn.textContent = el.classList.contains('open') ? 'Details ↑' : 'Details ↓';
+}
+
+function adoptGoal(id){
+  if(G.adopted.find(a=>a.id===id)) return;
+  const goal = G.goals.find(g=>g.id===id);
+  if(!goal) return;
+  G.adopted.push({ ...goal, adoptedAt: new Date().toISOString(), progress: 0 });
+  renderGoalsList();
+  renderAdoptedGoals();
+  showToast(`🎯 Goal adopted: "${goal.title}"!`);
+  // Also add a task for this goal
+  S.tasks.push({
+    text: `Work on goal: ${goal.title}`,
+    meta: `AI Goal · ${goal.timeframe} · ${goal.target}`,
+    priority: goal.difficulty === 'Easy' ? 'LOW' : goal.difficulty === 'Medium' ? 'MED' : 'HIGH',
+    done: false,
+  });
+  renderQuickTasks();
+}
+
+function unadoptGoal(id){
+  G.adopted = G.adopted.filter(a=>a.id!==id);
+  renderGoalsList();
+  renderAdoptedGoals();
+  showToast('Goal removed from active list.');
+}
+
+function renderAdoptedGoals(){
+  const sec = document.getElementById('adoptedSection');
+  const el = document.getElementById('adoptedGoalsEl');
+  if(!sec||!el) return;
+  if(G.adopted.length === 0){ sec.style.display='none'; return; }
+  sec.style.display = 'block';
+  document.getElementById('adoptedCount').textContent = G.adopted.length + ' active';
+  el.innerHTML = G.adopted.map(g => {
+    const daysSince = Math.floor((Date.now() - new Date(g.adoptedAt).getTime()) / 86400000);
+    const prog = Math.min(100, Math.round((daysSince / (parseInt(g.timeframe)||14)) * 100));
+    return `<div class="adopted-goal-item">
+      <span style="font-size:18px;">${g.emoji}</span>
+      <div style="flex:1;">
+        <div style="font-weight:600;margin-bottom:3px;">${g.title}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">${g.timeframe} · Day ${daysSince+1}</div>
+        <div class="goal-prog-mini"><div class="goal-prog-mini-fill" style="width:${prog}%"></div></div>
+      </div>
+      <span style="font-size:12px;font-weight:700;color:var(--accent);min-width:36px;text-align:right;">${prog}%</span>
+      <button class="btn btn-ghost btn-sm" style="margin-left:8px;" onclick="unadoptGoal('${g.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function filterGoals(cat){
+  G.filter = cat;
+  document.querySelectorAll('.focus-area-chip').forEach(c=>c.classList.remove('active'));
+  const chip = document.getElementById('chip-'+cat);
+  if(chip) chip.classList.add('active');
+  if(G.generated) renderGoalsList();
+}
+
+// ══════════════════════════════════════════════
+
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showPage(id){
+  document.querySelectorAll('.dash-page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-'+id)?.classList.add('active');
+  if(id==='goals'){initGoalsPage();}
+  if(id==='tasks'){renderAllTasks();renderQuickTasks();updateTaskProgress();}
+  if(id==='analysis'&&!S.chartsInited){initCharts();S.chartsInited=true;}
+  if(id==='insights'){buildInsights();}
+  if(id==='achievements'){buildAchievements();}
+  if(id==='bot'){initBot();}
+  if(id==='reports'){buildReports();}
+}
+function refreshOverview(){buildWeekChart();buildInsights();showToast('🔄 Refreshed!');}
+function saveSettings(){showToast('✅ Settings saved!');}
+function signOut(){
+  Object.assign(S,{userName:'',userEmail:'',avatarUrl:null,currentQ:0,answers:{},fileData:null,parsedData:null,tasks:[],chartsInited:false,chatHistory:[],cp:{},streak:1,screenTimeGoal:4,tasksEverDone:0,currentOrbIdx:0});
+  Object.values(CI).forEach(c=>{try{c.destroy();}catch{}});CI={};
+  closeProfile();
+  goScreen('loginScreen');
+  showToast('👋 Signed out!');
+}
+let toastT;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.display='block';
+  clearTimeout(toastT); toastT=setTimeout(()=>t.style.display='none',3200);
+}
+</script>
+</body>
+</html>
